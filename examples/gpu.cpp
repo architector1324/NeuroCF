@@ -43,7 +43,7 @@ int main()
     std::cout << il_out << std::endl;
     std::cout << ol_out << std::endl;
 
-    ecl::System::free();
+    ecl::System::release();
 
     return 0;
 }
