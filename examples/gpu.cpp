@@ -29,7 +29,8 @@ int main()
     auto p = ecl::System::getPlatform(0);
     ecl::Computer video(0, p, ecl::DEVICE::GPU);
 
-    video << data << ol << il_out << ol_out;
+    video << data << ol;
+    video << il_out << ol_out;
 
     // query
     il.query(data, il_out, video);
@@ -41,12 +42,6 @@ int main()
     std::cout << data << std::endl;
     std::cout << il_out << std::endl;
     std::cout << ol_out << std::endl;
-
-    // free
-    data.release(video);
-    ol.release(video);
-    il_out.release(video);
-    ol_out.release(video);
 
     ecl::System::free();
 
