@@ -10,7 +10,7 @@ namespace ncf{
     class Layer{
     private:
         std::map<std::size_t, Mat<T>> core;
-        size_t neurons = 0;
+        std::size_t neurons = 0;
         std::function<T(const T&)> activation = nullptr;
         std::string computer_activation = "";
 
@@ -39,17 +39,20 @@ namespace ncf{
 
         void setCoreGen(const std::function<void(Mat<T>&)>&);
 
-        size_t getNeurons() const;
+        std::size_t getNeurons() const;
         const Mat<T>& getCore(std::size_t) const;
         const std::string& getComputerActivation() const;
         const std::function<void(Mat<T>&)>& getCoreGen() const;
         const std::function<T(const T&)>& getActivation() const;
 
-        void query(const Mat<T>&, Mat<T>&);
-        void query(const Mat<T>&, Mat<T>&, Computer&);
+        void query(const Mat<T>&, Mat<T>&) const;
+        void query(const Mat<T>&, Mat<T>&, Computer&) const;
 
         void query(const Mat<T>&, Mat<T>&, Mat<T>&, const Layer<T>&);
         void query(const Mat<T>&, Mat<T>&, Mat<T>&, const Layer<T>&, Computer&);
+
+        void error(const Mat<T>&, const Mat<T>&, Mat<T>&) const;
+        void error(const Mat<T>&, const Mat<T>&, Mat<T>&, Computer&) const;
     };
 }
 
@@ -129,7 +132,7 @@ void ncf::Layer<T>::setCoreGen(const std::function<void(Mat<T>&)>& coregen){
 }
 
 template<typename T>
-size_t ncf::Layer<T>::getNeurons() const{
+std::size_t ncf::Layer<T>::getNeurons() const{
     return neurons;
 }
 template<typename T>
@@ -150,13 +153,13 @@ const std::function<T(const T&)>& ncf::Layer<T>::getActivation() const{
 }
 
 template<typename T>
-void ncf::Layer<T>::query(const Mat<T>& in, Mat<T>& out){
+void ncf::Layer<T>::query(const Mat<T>& in, Mat<T>& out) const{
     if(activation == nullptr)
         throw std::runtime_error("Layer [query]: activation function unsetted");
     in.map(activation, out);
 }
 template<typename T>
-void ncf::Layer<T>::query(const Mat<T>& in, Mat<T>& out, Computer& video){
+void ncf::Layer<T>::query(const Mat<T>& in, Mat<T>& out, Computer& video) const{
     in.map(computer_activation, out, video);
 }
 
@@ -176,4 +179,13 @@ void ncf::Layer<T>::query(const Mat<T>& in, Mat<T>& preout, Mat<T>& out, const L
     
     core.at(prev.neurons).mul(in, preout, video);
     preout.map(computer_activation, out, video);
+}
+
+template<typename T>
+void ncf::Layer<T>::error(const Mat<T>& answer, const Mat<T>& out, Mat<T>& error) const{
+    answer.sub(out, error);
+}
+template<typename T>
+void ncf::Layer<T>::error(const Mat<T>& answer, const Mat<T>& out, Mat<T>& error, Computer& video) const{
+    answer.sub(out, error, video);
 }
