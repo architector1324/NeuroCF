@@ -15,6 +15,14 @@ int main()
     auto df = [](const float& v){
         return v > 0 ? 1 : 0.1f;
     };
+
+    auto cost = [](const float& v){
+        return v * v;
+    };
+    auto dcost = [](const float& v){
+        return 2 * v;
+    };
+
     auto coregen = [](mcf::Mat<float>& A){
         A.gen([](size_t i, size_t j){
             return (float)(i + j) / 10.0f;
@@ -44,6 +52,9 @@ int main()
     mcf::Mat<float> ol_error(3, 1);
     mcf::Mat<float> hl_error(2, 1);
 
+    mcf::Mat<float> ol_grad(3, 2);
+    mcf::Mat<float> hl_grad(2, 5);
+
     // query
     il.query(data, il_out);
     hl.query(il_out, hl_preout, hl_out, il);
@@ -52,6 +63,10 @@ int main()
     // error
     ol.error(answer, ol_out, ol_error);
     hl.error(ol_error, hl_preout, hl_error, ol);
+
+    // grad
+    ol.grad(ol_error, hl_out, ol_grad, dcost);
+    hl.grad(hl_error, il_out, hl_grad, dcost);
 
     //output
     std::cout << "Data" << std::endl;
@@ -68,6 +83,10 @@ int main()
     std::cout << "Error" << std::endl;
     std::cout << hl_error << std::endl;
     std::cout << ol_error;
+
+    std::cout << "Grad" << std::endl;
+    std::cout << hl_grad << std::endl;
+    std::cout << ol_grad;
 
     return 0;
 }

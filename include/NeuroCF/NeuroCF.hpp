@@ -54,6 +54,7 @@ namespace ncf{
         const std::string& getComputerDerivative() const;
         const std::function<void(Mat<T>&)>& getCoreGen() const;
 
+        // Low-level methods
         void query(const Mat<T>&, Mat<T>&) const;
         void query(const Mat<T>&, Mat<T>&, Computer&) const;
 
@@ -65,6 +66,11 @@ namespace ncf{
 
         void error(const Mat<T>&, Mat<T>&, Mat<T>&, const Layer<T>&);
         void error(const Mat<T>&, Mat<T>&, Mat<T>&, const Layer<T>&, Computer&);
+
+        void grad(Mat<T>&, const Mat<T>&, Mat<T>&, const std::function<T(const T&)>&);
+        void grad(Mat<T>&, const Mat<T>&, Mat<T>&, const std::string&, Computer&);
+
+        // High-level methods
     };
 }
 
@@ -233,4 +239,23 @@ void ncf::Layer<T>::error(const Mat<T>& next_error, Mat<T>& preout, Mat<T>& erro
     next.getCore(neurons).mul(next_error, error, video, ncf::TRANSPOSE::FIRST);
     preout.map(computer_derivative, preout, video);
     error.hadamard(preout, error, video);
+}
+
+template<typename T>
+void ncf::Layer<T>::grad(Mat<T>& error, const Mat<T>& prev_out, Mat<T>& grad, const std::function<T(const T&)>& div_cost){
+    size_t count = error.getW() * error.getH();
+
+    error.map(div_cost, error);
+    error.mul(prev_out, grad, mcf::TRANSPOSE::SECOND);
+    grad.map([&](const T& v){
+        return -v / static_cast<T>(count);
+    }, grad);
+}
+template<typename T>
+void ncf::Layer<T>::grad(Mat<T>& error, const Mat<T>& prev_out, Mat<T>& grad, const std::string& div_cost, Computer& video){
+    std::string count = std::to_string(error.getW() * error.getH());
+
+    error.map(div_cost, error, video);
+    error.mul(prev_out, grad, video, mcf::TRANSPOSE::SECOND);
+    grad.map("ret = -v / " + count + ";", grad, video);
 }
