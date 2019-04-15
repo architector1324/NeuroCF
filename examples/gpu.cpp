@@ -10,6 +10,8 @@ int main()
     answer.full(3.0f);
 
     auto f = "ret = v > 0 ? v : v * 0.1f;";
+    auto df = "ret = v > 0 ? 1 : 0.1f;";
+
     auto coregen = [](mcf::Mat<float>& A){
         A.gen([](size_t i, size_t j){
             return (float)(i + j) / 10.0f;
@@ -20,31 +22,46 @@ int main()
     ncf::Layer<float> il(5);
     il.setActivation(f);
 
+    ncf::Layer<float> hl(2);
+    hl.setActivation(f);
+    hl.setDerivative(df);
+    hl.setCoreGen(coregen);
+
     ncf::Layer<float> ol(3);
     ol.setActivation(f);
     ol.setCoreGen(coregen);
 
     // setup containers
+    mcf::Mat<float> hl_preout(2, 1);
+
     mcf::Mat<float> il_out(5, 1);
+    mcf::Mat<float> hl_out(2, 1);
     mcf::Mat<float> ol_out(3, 1);
 
     mcf::Mat<float> ol_error(3, 1);
+    mcf::Mat<float> hl_error(2, 1);
 
     // setup gpu
-    auto p = ecl::System::getPlatform(0);
-    ecl::Computer video(0, p, ecl::DEVICE::GPU);
+    auto plat = ecl::System::getPlatform(0);
+    ecl::Computer video(0, plat, ecl::DEVICE::GPU);
 
-    video << data << answer << ol;
-    video << il_out << ol_out << ol_error;
+    video << data << answer;
+    video << il << hl << ol;
+    video << hl_preout;
+    video << il_out << hl_out << ol_out;
+    video << ol_error << hl_error;
 
     // query
     il.query(data, il_out, video);
-    ol.query(il_out, ol_out, ol_out, il, video);
+    hl.query(il_out, hl_preout, hl_out, il, video);
+    ol.query(hl_out, ol_out, ol_out, hl, video);
 
     // error
     ol.error(answer, ol_out, ol_error, video);
+    hl.error(ol_error, hl_preout, hl_error, ol, video);
 
-    video >> il_out >> ol_out >> ol_error;
+    video >> il_out >> hl_out >> ol_out;
+    video >> ol_error >> hl_error;
 
     //output
     std::cout << "Data" << std::endl;
@@ -52,15 +69,15 @@ int main()
 
     std::cout << "Net" << std::endl;
     std::cout << il_out << std::endl;
+    std::cout << hl_out << std::endl;
     std::cout << ol_out << std::endl;
 
     std::cout << "Answer" << std::endl;
     std::cout << answer << std::endl;
 
     std::cout << "Error" << std::endl;
+    std::cout << hl_error << std::endl;
     std::cout << ol_error;
-
-    ecl::System::release();
 
     return 0;
 }

@@ -11,8 +11,12 @@ namespace ncf{
     private:
         std::map<std::size_t, Mat<T>> core;
         std::size_t neurons = 0;
+
         std::function<T(const T&)> activation = nullptr;
+        std::function<T(const T&)> derivative = nullptr;
+
         std::string computer_activation = "";
+        std::string computer_derivative = "";
 
         std::function<void(Mat<T>&)> coregen = nullptr;
 
@@ -35,15 +39,20 @@ namespace ncf{
         void releaseCore(std::size_t);
 
         void setActivation(const std::function<T(const T&)>&);
+        void setDerivative(const std::function<T(const T&)>&);
+
         void setActivation(const std::string&);
+        void setDerivative(const std::string&);
 
         void setCoreGen(const std::function<void(Mat<T>&)>&);
 
         std::size_t getNeurons() const;
         const Mat<T>& getCore(std::size_t) const;
-        const std::string& getComputerActivation() const;
-        const std::function<void(Mat<T>&)>& getCoreGen() const;
         const std::function<T(const T&)>& getActivation() const;
+        const std::function<T(const T&)>& getDerivative() const;
+        const std::string& getComputerActivation() const;
+        const std::string& getComputerDerivative() const;
+        const std::function<void(Mat<T>&)>& getCoreGen() const;
 
         void query(const Mat<T>&, Mat<T>&) const;
         void query(const Mat<T>&, Mat<T>&, Computer&) const;
@@ -53,6 +62,9 @@ namespace ncf{
 
         void error(const Mat<T>&, const Mat<T>&, Mat<T>&) const;
         void error(const Mat<T>&, const Mat<T>&, Mat<T>&, Computer&) const;
+
+        void error(const Mat<T>&, Mat<T>&, Mat<T>&, const Layer<T>&);
+        void error(const Mat<T>&, Mat<T>&, Mat<T>&, const Layer<T>&, Computer&);
     };
 }
 
@@ -122,8 +134,17 @@ void ncf::Layer<T>::setActivation(const std::function<T(const T&)>& activation){
     this->activation = activation;
 }
 template<typename T>
+void ncf::Layer<T>::setDerivative(const std::function<T(const T&)>& derivative){
+    this->derivative = derivative;
+}
+
+template<typename T>
 void ncf::Layer<T>::setActivation(const std::string& activation){
     this->computer_activation = activation;
+}
+template<typename T>
+void ncf::Layer<T>::setDerivative(const std::string& derivative){
+    this->computer_derivative = derivative;
 }
 
 template<typename T>
@@ -144,12 +165,20 @@ const std::string& ncf::Layer<T>::getComputerActivation() const{
     return computer_activation;
 }
 template<typename T>
+const std::string& ncf::Layer<T>::getComputerDerivative() const{
+    return computer_derivative;
+}
+template<typename T>
 const std::function<void(mcf::Mat<T>&)>& ncf::Layer<T>::getCoreGen() const{
     return coregen;
 }
 template<typename T>
 const std::function<T(const T&)>& ncf::Layer<T>::getActivation() const{
     return activation;
+}
+template<typename T>
+const std::function<T(const T&)>& ncf::Layer<T>::getDerivative() const{
+    return derivative;
 }
 
 template<typename T>
@@ -188,4 +217,20 @@ void ncf::Layer<T>::error(const Mat<T>& answer, const Mat<T>& out, Mat<T>& error
 template<typename T>
 void ncf::Layer<T>::error(const Mat<T>& answer, const Mat<T>& out, Mat<T>& error, Computer& video) const{
     answer.sub(out, error, video);
+}
+
+template<typename T>
+void ncf::Layer<T>::error(const Mat<T>& next_error, Mat<T>& preout, Mat<T>& error, const Layer<T>& next){
+    if(derivative == nullptr)
+        throw std::runtime_error("Layer [query]: derivative function unsetted");
+
+    next.getCore(neurons).mul(next_error, error, ncf::TRANSPOSE::FIRST);
+    preout.map(derivative, preout);
+    error.hadamard(preout, error);
+}
+template<typename T>
+void ncf::Layer<T>::error(const Mat<T>& next_error, Mat<T>& preout, Mat<T>& error, const Layer<T>& next, Computer& video){
+    next.getCore(neurons).mul(next_error, error, video, ncf::TRANSPOSE::FIRST);
+    preout.map(computer_derivative, preout, video);
+    error.hadamard(preout, error, video);
 }
