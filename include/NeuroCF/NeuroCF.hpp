@@ -64,11 +64,13 @@ namespace ncf{
         void error(const Mat<T>&, const Mat<T>&, Mat<T>&) const;
         void error(const Mat<T>&, const Mat<T>&, Mat<T>&, Computer&) const;
 
-        void error(const Mat<T>&, Mat<T>&, Mat<T>&, const Layer<T>&);
-        void error(const Mat<T>&, Mat<T>&, Mat<T>&, const Layer<T>&, Computer&);
+        void error(const Mat<T>&, Mat<T>&, Mat<T>&, const Layer<T>&) const;
+        void error(const Mat<T>&, Mat<T>&, Mat<T>&, const Layer<T>&, Computer&) const;
 
-        void grad(Mat<T>&, const Mat<T>&, Mat<T>&, const std::function<T(const T&)>&);
-        void grad(Mat<T>&, const Mat<T>&, Mat<T>&, const std::string&, Computer&);
+        T cost(Mat<T>&, const std::function<T(const T&)>&) const;
+
+        void grad(Mat<T>&, const Mat<T>&, Mat<T>&, const std::function<T(const T&)>&) const;
+        void grad(Mat<T>&, const Mat<T>&, Mat<T>&, const std::string&, Computer&) const;
 
         // High-level methods
     };
@@ -226,7 +228,7 @@ void ncf::Layer<T>::error(const Mat<T>& answer, const Mat<T>& out, Mat<T>& error
 }
 
 template<typename T>
-void ncf::Layer<T>::error(const Mat<T>& next_error, Mat<T>& preout, Mat<T>& error, const Layer<T>& next){
+void ncf::Layer<T>::error(const Mat<T>& next_error, Mat<T>& preout, Mat<T>& error, const Layer<T>& next) const{
     if(derivative == nullptr)
         throw std::runtime_error("Layer [query]: derivative function unsetted");
 
@@ -235,14 +237,21 @@ void ncf::Layer<T>::error(const Mat<T>& next_error, Mat<T>& preout, Mat<T>& erro
     error.hadamard(preout, error);
 }
 template<typename T>
-void ncf::Layer<T>::error(const Mat<T>& next_error, Mat<T>& preout, Mat<T>& error, const Layer<T>& next, Computer& video){
+void ncf::Layer<T>::error(const Mat<T>& next_error, Mat<T>& preout, Mat<T>& error, const Layer<T>& next, Computer& video) const{
     next.getCore(neurons).mul(next_error, error, video, ncf::TRANSPOSE::FIRST);
     preout.map(computer_derivative, preout, video);
     error.hadamard(preout, error, video);
 }
 
 template<typename T>
-void ncf::Layer<T>::grad(Mat<T>& error, const Mat<T>& prev_out, Mat<T>& grad, const std::function<T(const T&)>& div_cost){
+T ncf::Layer<T>::cost(Mat<T>& error, const std::function<T(const T&)>& cost) const{
+    size_t count = error.getH() * error.getW();
+    error.map(cost, error);
+    return error.reduce() / static_cast<T>(count);
+}
+
+template<typename T>
+void ncf::Layer<T>::grad(Mat<T>& error, const Mat<T>& prev_out, Mat<T>& grad, const std::function<T(const T&)>& div_cost) const{
     size_t count = error.getW() * error.getH();
 
     error.map(div_cost, error);
@@ -252,7 +261,7 @@ void ncf::Layer<T>::grad(Mat<T>& error, const Mat<T>& prev_out, Mat<T>& grad, co
     }, grad);
 }
 template<typename T>
-void ncf::Layer<T>::grad(Mat<T>& error, const Mat<T>& prev_out, Mat<T>& grad, const std::string& div_cost, Computer& video){
+void ncf::Layer<T>::grad(Mat<T>& error, const Mat<T>& prev_out, Mat<T>& grad, const std::string& div_cost, Computer& video) const{
     std::string count = std::to_string(error.getW() * error.getH());
 
     error.map(div_cost, error, video);

@@ -64,6 +64,8 @@ int main()
     ol.error(answer, ol_out, ol_error);
     hl.error(ol_error, hl_preout, hl_error, ol);
 
+    float e = ol.cost(ol_error, cost);
+
     // grad
     ol.grad(ol_error, hl_out, ol_grad, dcost);
     hl.grad(hl_error, il_out, hl_grad, dcost);
@@ -80,9 +82,7 @@ int main()
     std::cout << "Answer" << std::endl;
     std::cout << answer << std::endl;
 
-    std::cout << "Error" << std::endl;
-    std::cout << hl_error << std::endl;
-    std::cout << ol_error;
+    std::cout << "Total error = " << e << std::endl;
 
     std::cout << "Grad" << std::endl;
     std::cout << hl_grad << std::endl;
