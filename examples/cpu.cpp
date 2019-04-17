@@ -46,15 +46,33 @@ int main()
     hl.query(il_out, hl_preout, hl_out, il);
     ol.query(hl_out, ol_out, ol_out, hl);
 
-    // error
-    ol.error(answer, ol_out, ol_error);
-    hl.error(ol_error, hl_preout, hl_error, ol);
+    // fit
+    float e = 1.0f;
 
-    float e = ol.cost(ol_error, ncf::cost::mse<float>);
+    for(size_t i = 0; i < 100; i++){
+        // query
+        il.query(data, il_out);
+        hl.query(il_out, hl_preout, hl_out, il);
+        ol.query(hl_out, ol_out, ol_out, hl);
 
-    // grad
-    ol.grad(ol_error, hl_out, ol_grad, ncf::derivative::cost::mse<float>);
-    hl.grad(hl_error, il_out, hl_grad, ncf::derivative::cost::mse<float>);
+        // error
+        ol.error(answer, ol_out, ol_error);
+        hl.error(ol_error, hl_preout, hl_error, ol);
+
+        e = ol.cost(ol_error, ncf::cost::mse<float>);
+        if(e < 0.001f) break;
+
+        // grad
+        ol.grad(ol_error, hl_out, ol_grad, ncf::derivative::cost::mse<float>);
+        hl.grad(hl_error, il_out, hl_grad, ncf::derivative::cost::mse<float>);
+
+        // train
+        ncf::optimizer::gd<float>(ol.getCore(2), ol_grad, 0.025);
+        ncf::optimizer::gd<float>(hl.getCore(5), hl_grad, 0.025);
+
+        std::cout << "Total error = " << e << std::endl;
+    }
+    std::cout << "Total error = " << e << std::endl;
 
     //output
     std::cout << "Data" << std::endl;
@@ -67,12 +85,6 @@ int main()
 
     std::cout << "Answer" << std::endl;
     std::cout << answer << std::endl;
-
-    std::cout << "Total error = " << e << std::endl;
-
-    std::cout << "Grad" << std::endl;
-    std::cout << hl_grad << std::endl;
-    std::cout << ol_grad;
 
     return 0;
 }

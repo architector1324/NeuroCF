@@ -6,44 +6,6 @@ namespace ncf{
     using namespace mcf;
     using namespace ecl;
 
-	namespace activation {
-		template<typename T>
-		T relu(const T& v){
-			return v > 0 ? v : 0;
-		}
-
-		template<typename T>
-		T lrelu(const T& v){
-			return v > 0 ? v : v * T(0.1);
-		}
-	}
-	namespace cost {
-		template<typename T>
-		T mse(const T& v) {
-			return v * v;
-		}
-	}
-
-	namespace derivative {
-		namespace activation {
-			template<typename T>
-			T relu(const T& v) {
-				return v > 0 ? 1 : 0;
-			}
-
-			template<typename T>
-			T lrelu(const T& v) {
-				return v > 0 ? 1 : T(0.1);
-			}
-		}
-		namespace cost {
-			template<typename T>
-			T mse(const T& v) {
-				return 2 * v;
-			}
-		}
-	}
-
     template<typename T>
     class Layer{
     private:
@@ -85,7 +47,8 @@ namespace ncf{
         void setCoreGen(const std::function<void(Mat<T>&)>&);
 
         std::size_t getNeurons() const;
-        const Mat<T>& getCore(std::size_t) const;
+        Mat<T>& getCore(std::size_t);
+        const Mat<T>& getConstCore(std::size_t) const;
         const std::function<T(const T&)>& getActivation() const;
         const std::function<T(const T&)>& getDerivative() const;
         const std::string& getComputerActivation() const;
@@ -112,6 +75,59 @@ namespace ncf{
 
         // High-level methods
     };
+}
+
+namespace ncf{
+    namespace activation {
+		template<typename T>
+		T relu(const T& v){
+			return v > 0 ? v : 0;
+		}
+
+		template<typename T>
+		T lrelu(const T& v){
+			return v > 0 ? v : v * T(0.1);
+		}
+	}
+	namespace cost {
+		template<typename T>
+		T mse(const T& v) {
+			return v * v;
+		}
+	}
+
+	namespace derivative {
+		namespace activation {
+			template<typename T>
+			T relu(const T& v) {
+				return v > 0 ? 1 : 0;
+			}
+
+			template<typename T>
+			T lrelu(const T& v) {
+				return v > 0 ? 1 : T(0.1);
+			}
+		}
+		namespace cost {
+			template<typename T>
+			T mse(const T& v) {
+				return 2 * v;
+			}
+		}
+	}
+
+    namespace optimizer{
+        template<typename T>
+        void gd(Mat<T>& X, Mat<T>& grad, T learning_rate){
+            grad.mul(learning_rate, grad);
+            X.sub(grad, X);
+        }
+        template<typename T>
+        void gd(Mat<T>& X, Mat<T>& grad, T learning_rate, ecl::Computer& video){
+            grad.mul(learning_rate, grad, video);
+            X.sub(grad, X, video);
+        }
+    }
 }
 
 // IMPLEMENTATION
@@ -203,7 +219,11 @@ std::size_t ncf::Layer<T>::getNeurons() const{
     return neurons;
 }
 template<typename T>
-const mcf::Mat<T>& ncf::Layer<T>::getCore(std::size_t prev_neurons) const{
+mcf::Mat<T>& ncf::Layer<T>::getCore(std::size_t prev_neurons){
+    return core.at(prev_neurons);
+}
+template<typename T>
+const mcf::Mat<T>& ncf::Layer<T>::getConstCore(std::size_t prev_neurons) const{
     return core.at(prev_neurons);
 }
 template<typename T>
@@ -270,13 +290,13 @@ void ncf::Layer<T>::error(const mcf::Mat<T>& next_error, mcf::Mat<T>& preout, mc
     if(derivative == nullptr)
         throw std::runtime_error("Layer [query]: derivative function unsetted");
 
-    next.getCore(neurons).mul(next_error, error, ncf::TRANSPOSE::FIRST);
+    next.getConstCore(neurons).mul(next_error, error, ncf::TRANSPOSE::FIRST);
     preout.map(derivative, preout);
     error.hadamard(preout, error);
 }
 template<typename T>
 void ncf::Layer<T>::error(const mcf::Mat<T>& next_error, mcf::Mat<T>& preout, mcf::Mat<T>& error, const Layer<T>& next, ecl::Computer& video) const{
-    next.getCore(neurons).mul(next_error, error, video, ncf::TRANSPOSE::FIRST);
+    next.getConstCore(neurons).mul(next_error, error, video, ncf::TRANSPOSE::FIRST);
     preout.map(computer_derivative, preout, video);
     error.hadamard(preout, error, video);
 }
