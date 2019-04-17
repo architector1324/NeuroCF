@@ -67,8 +67,8 @@ int main()
         hl.grad(hl_error, il_out, hl_grad, ncf::derivative::cost::mse<float>);
 
         // train
-        ncf::optimizer::gd<float>(ol.getCore(2), ol_grad, 0.025);
-        ncf::optimizer::gd<float>(hl.getCore(5), hl_grad, 0.025);
+        ol.train(ol_grad, hl, 0.025);
+        hl.train(hl_grad, il, 0.025);
 
         std::cout << "Total error = " << e << std::endl;
     }

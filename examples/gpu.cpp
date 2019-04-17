@@ -86,8 +86,8 @@ int main()
         hl.grad(hl_error, il_out, hl_grad, dcost, video);
 
         // train
-        ncf::optimizer::gd<float>(ol.getCore(2), ol_grad, 0.025, video);
-        ncf::optimizer::gd<float>(hl.getCore(5), hl_grad, 0.025, video);
+        ol.train(ol_grad, hl, 0.025, video);
+        hl.train(hl_grad, il, 0.025, video);
 
         std::cout << "Total error = " << e << std::endl;
     }

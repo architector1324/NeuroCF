@@ -73,6 +73,9 @@ namespace ncf{
         void grad(Mat<T>&, const Mat<T>&, Mat<T>&, const std::function<T(const T&)>&) const;
         void grad(Mat<T>&, const Mat<T>&, Mat<T>&, const std::string&, Computer&) const;
 
+        void train(Mat<T>&, const Layer<T>&, T);
+        void train(Mat<T>&, const Layer<T>&, T, Computer& video);
+
         // High-level methods
     };
 }
@@ -325,4 +328,18 @@ void ncf::Layer<T>::grad(mcf::Mat<T>& error, const mcf::Mat<T>& prev_out, mcf::M
     error.map(div_cost, error, video);
     error.mul(prev_out, grad, video, mcf::TRANSPOSE::SECOND);
     grad.map("ret = -v / " + count + ";", grad, video);
+}
+
+template<typename T>
+void ncf::Layer<T>::train(mcf::Mat<T>& grad, const Layer<T>& prev, T learning_rate){
+    createCore(prev.neurons);
+    optimizer::gd<T>(core.at(prev.neurons), grad, learning_rate);
+}
+template<typename T>
+void ncf::Layer<T>::train(mcf::Mat<T>& grad, const Layer<T>& prev, T learning_rate, ecl::Computer& video){
+    if(!checkCore(prev.neurons)){
+        createCore(prev.neurons);
+        send(video);
+    }
+    optimizer::gd<T>(core.at(prev.neurons), grad, learning_rate, video);
 }
