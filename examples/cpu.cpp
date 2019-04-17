@@ -58,7 +58,9 @@ int main()
 
     std::cout << "Error" << std::endl;
     std::cout << hl_stock.getConstError() << std::endl;
-    std::cout << ol_stock.getConstError();
+    std::cout << ol_stock.getConstError() << std::endl;
+
+    std::cout << "Total error " << ol.cost(ol_stock, ncf::cost::mse<float>) << std::endl;
 
     return 0;
 }

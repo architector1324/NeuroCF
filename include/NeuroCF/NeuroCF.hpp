@@ -92,6 +92,8 @@ namespace ncf{
 
         void error(const Stock<T>&, Stock<T>&) const;
         void error(const Stock<T>&, Stock<T>&, Computer&) const;
+
+        T cost(Stock<T>&, const std::function<T(const T&)>&) const;
     };
 
     template<typename T>
@@ -480,6 +482,14 @@ void ncf::Layer<T>::error(const Stock<T>& in, Stock<T>& out, ecl::Computer& vide
     next_core.mul(in_error, out_error, video, ncf::TRANSPOSE::FIRST);
     out_preout.map(computer_derivative, out_preout, video);
     out_error.hadamard(out_preout, out_error, video);
+}
+
+template<typename T>
+T ncf::Layer<T>::cost(Stock<T>& error, const std::function<T(const T&)>& cost) const{
+    Mat<T>& curr_error = error.getError();
+    size_t count = curr_error.getH() * curr_error.getW();
+    curr_error.map(cost, curr_error);
+    return curr_error.reduce() / static_cast<T>(count);
 }
 
 // Stock
