@@ -6,6 +6,7 @@ namespace ncf{
     using namespace mcf;
     using namespace ecl;
 
+    // Low-level API
     template<typename T>
     class Stock;
 
@@ -85,6 +86,12 @@ namespace ncf{
 
         void query(const Stock<T>&, Stock<T>&);
         void query(const Stock<T>&, Stock<T>&, Computer&);
+
+        void error(const Mat<T>&, Stock<T>&) const;
+        void error(const Mat<T>&, Stock<T>&, Computer&) const;
+
+        void error(const Stock<T>&, Stock<T>&) const;
+        void error(const Stock<T>&, Stock<T>&, Computer&) const;
     };
 
     template<typename T>
@@ -123,6 +130,8 @@ namespace ncf{
         void createGrad(std::size_t);
         void releaseGrad(std::size_t);
     };
+
+    // High-level API
 }
 
 namespace ncf{
@@ -407,8 +416,13 @@ void ncf::Layer<T>::query(const Stock<T>& in, Stock<T>& out){
     size_t prev_neurons = in.getLayer().getNeurons();
     createCore(prev_neurons);
 
-    getCore(prev_neurons).mul(in.getConstOut(), out.getPreout());
-    out.getConstPreout().map(activation, out.getOut());
+    const Mat<T>& in_out = in.getConstOut();
+
+    Mat<T>& out_preout = out.getPreout();
+    Mat<T>& out_out = out.getOut();
+
+    getCore(prev_neurons).mul(in_out, out_preout);
+    out_preout.map(activation, out_out);
 }
 template<typename T>
 void ncf::Layer<T>::query(const Stock<T>& in, Stock<T>& out, ecl::Computer& video){
@@ -418,8 +432,54 @@ void ncf::Layer<T>::query(const Stock<T>& in, Stock<T>& out, ecl::Computer& vide
         send(video);
     }
     
-    getCore(prev_neurons).mul(in.getConstOut(), out.getPreout(), video);
-    out.getConstPreout().map(computer_activation, out.getOut(), video);
+    const Mat<T>& in_out = in.getConstOut();
+
+    Mat<T>& out_preout = out.getPreout();
+    Mat<T>& out_out = out.getOut();
+
+    getCore(prev_neurons).mul(in_out, out_preout, video);
+    out_preout.map(computer_activation, out_out, video);
+}
+
+template<typename T>
+void ncf::Layer<T>::error(const mcf::Mat<T>& answer, Stock<T>& out) const{
+    answer.sub(out.getConstOut(), out.getError());
+}
+template<typename T>
+void ncf::Layer<T>::error(const mcf::Mat<T>& answer, Stock<T>& out, ecl::Computer& video) const{
+    answer.sub(out.getConstOut(), out.getError(), video);
+}
+
+template<typename T>
+void ncf::Layer<T>::error(const Stock<T>& in, Stock<T>& out) const{
+    if(derivative == nullptr)
+        throw std::runtime_error("Layer [query]: derivative function unsetted");
+
+    const Mat<T>& next_core = in.getLayer().getConstCore(neurons);
+
+    const Mat<T>& in_error = in.getConstError();
+    Mat<T>& out_error = out.getError();
+
+    Mat<T>& out_preout = out.getPreout();
+    Mat<T>& out_out = out.getOut();
+
+    next_core.mul(in_error, out_error, ncf::TRANSPOSE::FIRST);
+    out_preout.map(derivative, out_preout);
+    out_error.hadamard(out_preout, out_error);
+}
+template<typename T>
+void ncf::Layer<T>::error(const Stock<T>& in, Stock<T>& out, ecl::Computer& video) const{
+    const Mat<T>& next_core = in.getLayer().getConstCore(neurons);
+
+    const Mat<T>& in_error = in.getConstError();
+    Mat<T>& out_error = out.getError();
+
+    Mat<T>& out_preout = out.getPreout();
+    Mat<T>& out_out = out.getOut();
+
+    next_core.mul(in_error, out_error, video, ncf::TRANSPOSE::FIRST);
+    out_preout.map(computer_derivative, out_preout, video);
+    out_error.hadamard(out_preout, out_error, video);
 }
 
 // Stock
@@ -435,36 +495,36 @@ void ncf::Stock<T>::send(ecl::Computer& video){
     for(auto& p : grad){
         if(p.second != nullptr) video << p.second;
     }
-    if(preout != nullptr) video << preout;
-    if(error != nullptr) video << error;
-    if(out != nullptr) video << out;
+    video << preout;
+    video << error;
+    video << out;
 }
 template<typename T>
 void ncf::Stock<T>::receive(ecl::Computer& video){
     for(auto& p : grad){
         if(p.second != nullptr) video >> p.second;
     }
-    if(preout != nullptr) video >> preout;
-    if(error != nullptr) video >> error;
-    if(out != nullptr) video >> out;
+    video >> preout;
+    video >> error;
+    video >> out;
 }
 template<typename T>
 void ncf::Stock<T>::grab(ecl::Computer& video){
     for(auto& p : grad){
         if(p.second != nullptr) p.second.grab(video);
     }
-    if(preout != nullptr) preout.grab(video);
-    if(error != nullptr) error.grab(video);
-    if(out != nullptr) out.grab(video);
+    preout.grab(video);
+    error.grab(video);
+    out.grab(video);
 }
 template<typename T>
 void ncf::Stock<T>::release(ecl::Computer& video){
     for(auto& p : grad){
         if(p.second != nullptr) p.second.release(video);
     }
-    if(preout != nullptr) preout.release(video);
-    if(error != nullptr) error.release(video);
-    if(out != nullptr) out.release(video);
+    preout.release(video);
+    error.release(video);
+    out.release(video);
 }
 
 namespace ncf{

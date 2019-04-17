@@ -14,10 +14,12 @@ int main()
     data.full(2.0f);
     answer.full(3.0f);
 
+    // setup functions
     auto f = "ret = v > 0 ? v : v * 0.1f;";
     auto df = "ret = v > 0 ? 1 : 0.1f;";
     auto dcost = "2 * v;";
 
+    // setup core generator
     auto coregen = [](mcf::Mat<float>& A){
         A.gen([](size_t i, size_t j){
             return (float)(i + j) / 10.0f;
@@ -53,9 +55,13 @@ int main()
     hl.query(il_stock, hl_stock, video);
     ol.query(hl_stock, ol_stock, video);
 
+    // error
+    ol.error(answer, ol_stock, video);
+    hl.error(ol_stock, hl_stock, video);
+
     video >> il_stock >> hl_stock >> ol_stock;
 
-    //output
+    // output
     std::cout << "Data" << std::endl;
     std::cout << data << std::endl;
     
@@ -65,7 +71,11 @@ int main()
     std::cout << ol_stock.getConstOut() << std::endl;
 
     std::cout << "Answer" << std::endl;
-    std::cout << answer;
+    std::cout << answer << std::endl;
+
+    std::cout << "Error" << std::endl;
+    std::cout << hl_stock.getConstError() << std::endl;
+    std::cout << ol_stock.getConstError();
 
     ecl::System::release();
     return 0;

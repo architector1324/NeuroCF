@@ -3,12 +3,14 @@
 
 int main()
 {
+    // setup data
     mcf::Mat<float> data(5, 1);
     mcf::Mat<float> answer(3, 1);
 
     data.full(2.0f);
     answer.full(3.0f);
 
+    // setup core generator
     auto coregen = [](mcf::Mat<float>& A){
         A.gen([](size_t i, size_t j){
             return (float)(i + j) / 10.0f;
@@ -38,6 +40,10 @@ int main()
     hl.query(il_stock, hl_stock);
     ol.query(hl_stock, ol_stock);
 
+    // error
+    ol.error(answer, ol_stock);
+    hl.error(ol_stock, hl_stock);
+
     // output
     std::cout << "Data" << std::endl;
     std::cout << data << std::endl;
@@ -48,7 +54,11 @@ int main()
     std::cout << ol_stock.getConstOut() << std::endl;
 
     std::cout << "Answer" << std::endl;
-    std::cout << answer;
+    std::cout << answer << std::endl;
+
+    std::cout << "Error" << std::endl;
+    std::cout << hl_stock.getConstError() << std::endl;
+    std::cout << ol_stock.getConstError();
 
     return 0;
 }
