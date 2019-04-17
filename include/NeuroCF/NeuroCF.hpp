@@ -403,13 +403,13 @@ void ncf::Layer<T>::train(mcf::Mat<T>& grad, const Layer<T>& prev, T learning_ra
 
 // High-level methods
 template<typename T>
-void ncf::Layer<T>::query(const Mat<T>& in, Stock<T>& stock) const{
+void ncf::Layer<T>::query(const mcf::Mat<T>& in, Stock<T>& stock) const{
     if(activation == nullptr)
         throw std::runtime_error("Layer [query]: activation function unsetted");
     in.map(activation, stock.getOut());
 }
 template<typename T>
-void ncf::Layer<T>::query(const Mat<T>& in, Stock<T>& stock, ecl::Computer& video) const{
+void ncf::Layer<T>::query(const mcf::Mat<T>& in, Stock<T>& stock, ecl::Computer& video) const{
     in.map(computer_activation, stock.getOut(), video);
 }
 
