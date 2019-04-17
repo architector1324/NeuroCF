@@ -9,20 +9,6 @@ int main()
     data.full(2.0f);
     answer.full(3.0f);
 
-    auto f = [](const float& v){
-        return v > 0 ? v : v * 0.1f;
-    };
-    auto df = [](const float& v){
-        return v > 0 ? 1 : 0.1f;
-    };
-
-    auto cost = [](const float& v){
-        return v * v;
-    };
-    auto dcost = [](const float& v){
-        return 2 * v;
-    };
-
     auto coregen = [](mcf::Mat<float>& A){
         A.gen([](size_t i, size_t j){
             return (float)(i + j) / 10.0f;
@@ -31,15 +17,15 @@ int main()
 
     // setup net
     ncf::Layer<float> il(5);
-    il.setActivation(f);
+    il.setActivation(ncf::activation::lrelu<float>);
 
     ncf::Layer<float> hl(2);
-    hl.setActivation(f);
-    hl.setDerivative(df);
+    hl.setActivation(ncf::activation::lrelu<float>);
+    hl.setDerivative(ncf::derivative::activation::lrelu<float>);
     hl.setCoreGen(coregen);
 
     ncf::Layer<float> ol(3);
-    ol.setActivation(f);
+    ol.setActivation(ncf::activation::lrelu<float>);
     ol.setCoreGen(coregen);
 
     // setup containers
@@ -64,11 +50,11 @@ int main()
     ol.error(answer, ol_out, ol_error);
     hl.error(ol_error, hl_preout, hl_error, ol);
 
-    float e = ol.cost(ol_error, cost);
+    float e = ol.cost(ol_error, ncf::cost::mse<float>);
 
     // grad
-    ol.grad(ol_error, hl_out, ol_grad, dcost);
-    hl.grad(hl_error, il_out, hl_grad, dcost);
+    ol.grad(ol_error, hl_out, ol_grad, ncf::derivative::cost::mse<float>);
+    hl.grad(hl_error, il_out, hl_grad, ncf::derivative::cost::mse<float>);
 
     //output
     std::cout << "Data" << std::endl;

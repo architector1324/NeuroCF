@@ -6,6 +6,44 @@ namespace ncf{
     using namespace mcf;
     using namespace ecl;
 
+	namespace activation {
+		template<typename T>
+		T relu(const T& v){
+			return v > 0 ? v : 0;
+		}
+
+		template<typename T>
+		T lrelu(const T& v){
+			return v > 0 ? v : v * T(0.1);
+		}
+	}
+	namespace cost {
+		template<typename T>
+		T mse(const T& v) {
+			return v * v;
+		}
+	}
+
+	namespace derivative {
+		namespace activation {
+			template<typename T>
+			T relu(const T& v) {
+				return v > 0 ? 1 : 0;
+			}
+
+			template<typename T>
+			T lrelu(const T& v) {
+				return v > 0 ? 1 : T(0.1);
+			}
+		}
+		namespace cost {
+			template<typename T>
+			T mse(const T& v) {
+				return 2 * v;
+			}
+		}
+	}
+
     template<typename T>
     class Layer{
     private:

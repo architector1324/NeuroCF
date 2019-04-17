@@ -12,9 +12,6 @@ int main()
     auto f = "ret = v > 0 ? v : v * 0.1f;";
     auto df = "ret = v > 0 ? 1 : 0.1f;";
 
-    auto cost = [](const float& v){
-        return v * v;
-    };
     auto dcost = "ret = 2 * v;";
 
     auto coregen = [](mcf::Mat<float>& A){
@@ -70,7 +67,7 @@ int main()
     hl.error(ol_error, hl_preout, hl_error, ol, video);
 
     video >> ol_error;
-    float e = ol.cost(ol_error, cost);
+    float e = ol.cost(ol_error, ncf::cost::mse<float>);
 
     // grad
     ol.grad(ol_error, hl_out, ol_grad, dcost, video);
