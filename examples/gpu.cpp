@@ -42,69 +42,31 @@ int main()
     video << il << hl << ol;
 
     // setup containers
-    mcf::Mat<float> hl_preout(2, 1);
+    ncf::Stock<float> il_stock(il, 1);
+    ncf::Stock<float> hl_stock(hl, 1);
+    ncf::Stock<float> ol_stock(ol, 1);
 
-    mcf::Mat<float> il_out(5, 1);
-    mcf::Mat<float> hl_out(2, 1);
-    mcf::Mat<float> ol_out(3, 1);
-
-    mcf::Mat<float> ol_error(3, 1);
-    mcf::Mat<float> hl_error(2, 1);
-
-    mcf::Mat<float> ol_grad(3, 2);
-    mcf::Mat<float> hl_grad(2, 5);
-
-    video << hl_preout;
-    video << il_out << hl_out << ol_out;
-    video << ol_error << hl_error;
-    video << ol_grad << hl_grad;
+    video << il_stock << hl_stock << ol_stock;
 
     // query
-    il.query(data, il_out, video);
-    hl.query(il_out, hl_preout, hl_out, il, video);
-    ol.query(hl_out, ol_out, ol_out, hl, video);
+    il.query(data, il_stock, video);
+    hl.query(il_stock, hl_stock, video);
+    ol.query(hl_stock, ol_stock, video);
 
-    // fit
-    float e = 1.0f;
+    video >> il_stock >> hl_stock >> ol_stock;
 
-    for(size_t i = 0; i < 100; i++){
-        // query
-        il.query(data, il_out, video);
-        hl.query(il_out, hl_preout, hl_out, il, video);
-        ol.query(hl_out, ol_out, ol_out, hl, video);
-
-        // error
-        ol.error(answer, ol_out, ol_error, video);
-        hl.error(ol_error, hl_preout, hl_error, ol, video);
-
-        video >> ol_error;
-        e = ol.cost(ol_error, ncf::cost::mse<float>);
-        if(e < 0.001f) break;
-
-        // grad
-        ol.grad(ol_error, hl_out, ol_grad, dcost, video);
-        hl.grad(hl_error, il_out, hl_grad, dcost, video);
-
-        // train
-        ol.train(ol_grad, hl, 0.025, video);
-        hl.train(hl_grad, il, 0.025, video);
-
-        std::cout << "Total error = " << e << std::endl;
-    }
-    std::cout << "Total error = " << e << std::endl;
-
-    video >> il_out >> hl_out >> ol_out;
     //output
     std::cout << "Data" << std::endl;
     std::cout << data << std::endl;
-
+    
     std::cout << "Net" << std::endl;
-    std::cout << il_out << std::endl;
-    std::cout << hl_out << std::endl;
-    std::cout << ol_out << std::endl;
+    std::cout << il_stock.getConstOut() << std::endl;
+    std::cout << hl_stock.getConstOut() << std::endl;
+    std::cout << ol_stock.getConstOut() << std::endl;
 
     std::cout << "Answer" << std::endl;
-    std::cout << answer << std::endl;
+    std::cout << answer;
 
+    ecl::System::release();
     return 0;
 }
