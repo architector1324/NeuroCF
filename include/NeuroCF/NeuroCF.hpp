@@ -72,7 +72,7 @@ namespace ncf{
         void error(const Mat<T>&, Mat<T>&, Mat<T>&, const Layer<T>&) const;
         void error(const Mat<T>&, Mat<T>&, Mat<T>&, const Layer<T>&, Computer&) const;
 
-        T cost(Mat<T>&, const std::function<T(const T&)>&) const;
+        T cost(const Mat<T>&, const std::function<T(const T&)>&) const;
 
         void grad(Mat<T>&, const Mat<T>&, Mat<T>&, const std::function<T(const T&)>&) const;
         void grad(Mat<T>&, const Mat<T>&, Mat<T>&, const std::string&, Computer&) const;
@@ -93,7 +93,7 @@ namespace ncf{
         void error(const Stock<T>&, Stock<T>&) const;
         void error(const Stock<T>&, Stock<T>&, Computer&) const;
 
-        T cost(Stock<T>&, const std::function<T(const T&)>&) const;
+        T cost(const Stock<T>&, const std::function<T(const T&)>&) const;
 
 		void grad(const Stock<T>&, Stock<T>&, const std::function<T(const T&)>&) const;
 		void grad(const Stock<T>&, Stock<T>&, const std::string&, Computer&) const;
@@ -365,7 +365,7 @@ void ncf::Layer<T>::error(const mcf::Mat<T>& next_error, mcf::Mat<T>& preout, mc
 }
 
 template<typename T>
-T ncf::Layer<T>::cost(mcf::Mat<T>& error, const std::function<T(const T&)>& cost) const{
+T ncf::Layer<T>::cost(const mcf::Mat<T>& error, const std::function<T(const T&)>& cost) const{
     size_t count = error.getH() * error.getW();
     return error.mreduce(cost) / static_cast<T>(count);
 }
@@ -487,8 +487,8 @@ void ncf::Layer<T>::error(const Stock<T>& in, Stock<T>& out, ecl::Computer& vide
 }
 
 template<typename T>
-T ncf::Layer<T>::cost(Stock<T>& error, const std::function<T(const T&)>& cost) const{
-    Mat<T>& curr_error = error.getError();
+T ncf::Layer<T>::cost(const Stock<T>& error, const std::function<T(const T&)>& cost) const{
+    const Mat<T>& curr_error = error.getConstError();
     size_t count = curr_error.getH() * curr_error.getW();
     return curr_error.mreduce(cost) / static_cast<T>(count);
 }
