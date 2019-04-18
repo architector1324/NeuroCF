@@ -364,8 +364,7 @@ void ncf::Layer<T>::error(const mcf::Mat<T>& next_error, mcf::Mat<T>& preout, mc
 template<typename T>
 T ncf::Layer<T>::cost(mcf::Mat<T>& error, const std::function<T(const T&)>& cost) const{
     size_t count = error.getH() * error.getW();
-    error.map(cost, error);
-    return error.reduce() / static_cast<T>(count);
+    return error.mreduce(cost) / static_cast<T>(count);
 }
 
 template<typename T>
@@ -488,8 +487,7 @@ template<typename T>
 T ncf::Layer<T>::cost(Stock<T>& error, const std::function<T(const T&)>& cost) const{
     Mat<T>& curr_error = error.getError();
     size_t count = curr_error.getH() * curr_error.getW();
-    curr_error.map(cost, curr_error);
-    return curr_error.reduce() / static_cast<T>(count);
+    return curr_error.mreduce(cost) / static_cast<T>(count);
 }
 
 // Stock

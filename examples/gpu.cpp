@@ -61,6 +61,8 @@ int main()
 
     video >> il_stock >> hl_stock >> ol_stock;
 
+	float e = ol.cost(ol_stock, ncf::cost::mse<float>);
+
     // output
     std::cout << "Data" << std::endl;
     std::cout << data << std::endl;
@@ -77,7 +79,7 @@ int main()
     std::cout << hl_stock.getConstError() << std::endl;
     std::cout << ol_stock.getConstError() << std::endl;
 
-    std::cout << "Total error " << ol.cost(ol_stock, ncf::cost::mse<float>) << std::endl;
+    std::cout << "Total error " << e << std::endl;
 
     ecl::System::release();
     return 0;
