@@ -50,22 +50,33 @@ int main()
 
     video << il_stock << hl_stock << ol_stock;
 
-    // query
-    il.query(data, il_stock, video);
-    hl.query(il_stock, hl_stock, video);
-    ol.query(hl_stock, ol_stock, video);
+	// fit
+	float e = 1.0f;
+	for (size_t i = 0; i < 100; i++) {
+		// query
+		il.query(data, il_stock, video);
+		hl.query(il_stock, hl_stock, video);
+		ol.query(hl_stock, ol_stock, video);
 
-    // error
-    ol.error(answer, ol_stock, video);
-    hl.error(ol_stock, hl_stock, video);
+		// error
+		ol.error(answer, ol_stock, video);
+		hl.error(ol_stock, hl_stock, video);
 
-	video >> ol_stock;
+		video >> ol_stock;
 
-	float e = ol.cost(ol_stock, ncf::cost::mse<float>);
+		e = ol.cost(ol_stock, ncf::cost::mse<float>);
+		std::cout << "Total error " << e << std::endl;
 
-	// grad
-	hl.grad(il_stock, hl_stock, dcost, video);
-	ol.grad(hl_stock, ol_stock, dcost, video);
+		if (e < 0.001f) break;
+
+		// grad
+		hl.grad(il_stock, hl_stock, dcost, video);
+		ol.grad(hl_stock, ol_stock, dcost, video);
+
+		// train
+		hl.train(il_stock, hl_stock, 0.025, video);
+		ol.train(hl_stock, ol_stock, 0.025, video);
+	}
 
     video >> il_stock >> hl_stock >> ol_stock;
 
@@ -80,16 +91,6 @@ int main()
 
     std::cout << "Answer" << std::endl;
     std::cout << answer << std::endl;
-
-    std::cout << "Error" << std::endl;
-    std::cout << hl_stock.getConstError() << std::endl;
-    std::cout << ol_stock.getConstError() << std::endl;
-
-	std::cout << "Grad" << std::endl;
-	std::cout << hl_stock.getGrad(5) << std::endl;
-	std::cout << ol_stock.getGrad(2) << std::endl;
-
-    std::cout << "Total error " << e << std::endl;
 
     ecl::System::release();
     return 0;

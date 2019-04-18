@@ -35,20 +35,33 @@ int main()
     ncf::Stock<float> hl_stock(hl, 1);
     ncf::Stock<float> ol_stock(ol, 1);
 
-    // query
-    il.query(data, il_stock);
-    hl.query(il_stock, hl_stock);
-    ol.query(hl_stock, ol_stock);
+	// fit
+	float e = 1.0f;
 
-    // error
-    ol.error(answer, ol_stock);
-	hl.error(ol_stock, hl_stock);
+	for (size_t i = 0; i < 100; i++) {
+		// query
+		il.query(data, il_stock);
+		hl.query(il_stock, hl_stock);
+		ol.query(hl_stock, ol_stock);
 
-	float e = ol.cost(ol_stock, ncf::cost::mse<float>);
+		// error
+		ol.error(answer, ol_stock);
+		hl.error(ol_stock, hl_stock);
 
-	// grad
-	hl.grad(il_stock, hl_stock, ncf::derivative::cost::mse<float>);
-	ol.grad(hl_stock, ol_stock, ncf::derivative::cost::mse<float>);
+		e = ol.cost(ol_stock, ncf::cost::mse<float>);
+		std::cout << "Total error " << e << std::endl;
+
+		if (e < 0.001f) break;
+
+		// grad
+		hl.grad(il_stock, hl_stock, ncf::derivative::cost::mse<float>);
+		ol.grad(hl_stock, ol_stock, ncf::derivative::cost::mse<float>);
+
+		// train
+		hl.train(il_stock, hl_stock, 0.025);
+		ol.train(hl_stock, ol_stock, 0.025);
+	}
+	std::cout << "Total error " << e << std::endl;
 
     // output
     std::cout << "Data" << std::endl;
@@ -61,16 +74,6 @@ int main()
 
     std::cout << "Answer" << std::endl;
     std::cout << answer << std::endl;
-
-    std::cout << "Error" << std::endl;
-    std::cout << hl_stock.getConstError() << std::endl;
-    std::cout << ol_stock.getConstError() << std::endl;
-
-	std::cout << "Grad" << std::endl;
-	std::cout << hl_stock.getGrad(5) << std::endl;
-	std::cout << ol_stock.getGrad(2) << std::endl;
-
-    std::cout << "Total error " << e << std::endl;
 
     return 0;
 }

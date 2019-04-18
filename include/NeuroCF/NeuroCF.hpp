@@ -97,6 +97,9 @@ namespace ncf{
 
 		void grad(const Stock<T>&, Stock<T>&, const std::function<T(const T&)>&) const;
 		void grad(const Stock<T>&, Stock<T>&, const std::string&, Computer&) const;
+
+		void train(const Stock<T>&, Stock<T>&, T);
+		void train(const Stock<T>&, Stock<T>&, T, Computer&);
     };
 
     template<typename T>
@@ -398,7 +401,7 @@ template<typename T>
 void ncf::Layer<T>::train(mcf::Mat<T>& grad, const Layer<T>& prev, T learning_rate, ecl::Computer& video){
     if(!checkCore(prev.neurons)){
         createCore(prev.neurons);
-        send(video);
+        getCore(prev.neurons).send(video);
     }
     optimizer::gd<T>(getCore(prev.neurons), grad, learning_rate, video);
 }
@@ -509,6 +512,23 @@ void ncf::Layer<T>::grad(const Stock<T>& in, Stock<T>& out, const std::function<
 	grad.map([&](const T& v) {
 		return -v / static_cast<T>(count);
 	}, grad);
+}
+
+template<typename T>
+void ncf::Layer<T>::train(const Stock<T>& in, Stock<T>& out, T learning_rate) {
+	std::size_t prev_neurons = in.getLayer().getNeurons();
+	createCore(prev_neurons);
+	optimizer::gd<T>(getCore(prev_neurons), out.getGrad(prev_neurons), learning_rate);
+}
+template<typename T>
+void ncf::Layer<T>::train(const Stock<T>& in, Stock<T>& out, T learning_rate, ecl::Computer& video) {
+	std::size_t prev_neurons = in.getLayer().getNeurons();
+
+	if (!checkCore(prev_neurons)) {
+		createCore(prev_neurons);
+		getCore(prev_neurons).send(video);
+	}
+	optimizer::gd<T>(getCore(prev_neurons), out.getGrad(prev_neurons), learning_rate, video);
 }
 
 template<typename T>
