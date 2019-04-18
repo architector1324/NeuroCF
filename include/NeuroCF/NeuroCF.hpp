@@ -23,6 +23,7 @@ namespace ncf{
         std::string computer_derivative = "";
 
         std::function<void(Mat<T>&)> coregen = nullptr;
+		std::function<void(Mat<T>&, Computer&)> computer_coregen = nullptr;
 
     public:
         Layer() = delete;
@@ -40,6 +41,7 @@ namespace ncf{
 
         bool checkCore(std::size_t) const;
         void createCore(std::size_t);
+		void createCore(std::size_t, Computer&);
         void releaseCore(std::size_t);
 
         void setActivation(const std::function<T(const T&)>&);
@@ -49,6 +51,7 @@ namespace ncf{
         void setDerivative(const std::string&);
 
         void setCoreGen(const std::function<void(Mat<T>&)>&);
+		void setCoreGen(const std::function<void(Mat<T>&, Computer&)>&);
 
         std::size_t getNeurons() const;
         Mat<T>& getCore(std::size_t);
@@ -58,6 +61,7 @@ namespace ncf{
         const std::string& getComputerActivation() const;
         const std::string& getComputerDerivative() const;
         const std::function<void(Mat<T>&)>& getCoreGen() const;
+		const std::function<void(Mat<T>&, Computer&)>& getComputerCoreGen() const;
 
         // Low-level methods
         void query(const Mat<T>&, Mat<T>&) const;
@@ -136,6 +140,7 @@ namespace ncf{
 
         bool checkGrad(std::size_t) const;
         void createGrad(std::size_t);
+		void createGrad(std::size_t, Computer&);
         void releaseGrad(std::size_t);
     };
 
@@ -249,6 +254,15 @@ void ncf::Layer<T>::createCore(std::size_t prev_neurons){
     }
 }
 template<typename T>
+void ncf::Layer<T>::createCore(std::size_t prev_neurons, ecl::Computer& video) {
+	if (!checkCore(prev_neurons)) {
+		Mat<T> new_core(neurons, prev_neurons);
+		video << new_core;
+		computer_coregen(new_core, video);
+		core.emplace(prev_neurons, std::move(new_core));
+	}
+}
+template<typename T>
 void ncf::Layer<T>::releaseCore(std::size_t prev_neurons){
     auto it = core.find(prev_neurons);
     if(it != core.end()){
@@ -278,6 +292,10 @@ template<typename T>
 void ncf::Layer<T>::setCoreGen(const std::function<void(mcf::Mat<T>&)>& coregen){
     this->coregen = coregen;
 }
+template<typename T>
+void ncf::Layer<T>::setCoreGen(const std::function<void(mcf::Mat<T>&, ecl::Computer&)>& coregen) {
+	this->computer_coregen = coregen;
+}
 
 template<typename T>
 std::size_t ncf::Layer<T>::getNeurons() const{
@@ -302,6 +320,10 @@ const std::string& ncf::Layer<T>::getComputerDerivative() const{
 template<typename T>
 const std::function<void(mcf::Mat<T>&)>& ncf::Layer<T>::getCoreGen() const{
     return coregen;
+}
+template<typename T>
+const std::function<void(mcf::Mat<T>&, ecl::Computer&)>& ncf::Layer<T>::getComputerCoreGen() const {
+	return computer_coregen;
 }
 template<typename T>
 const std::function<T(const T&)>& ncf::Layer<T>::getActivation() const{
@@ -333,10 +355,7 @@ void ncf::Layer<T>::query(const mcf::Mat<T>& in, mcf::Mat<T>& preout, mcf::Mat<T
 }
 template<typename T>
 void ncf::Layer<T>::query(const mcf::Mat<T>& in, mcf::Mat<T>& preout, mcf::Mat<T>& out, const Layer<T>& prev, ecl::Computer& video){
-    if(!checkCore(prev.neurons)){
-        createCore(prev.neurons);
-        send(video);
-    }
+    createCore(prev.neurons, video);
     
     getCore(prev.neurons).mul(in, preout, video);
     preout.map(computer_activation, out, video);
@@ -399,10 +418,8 @@ void ncf::Layer<T>::train(mcf::Mat<T>& grad, const Layer<T>& prev, T learning_ra
 }
 template<typename T>
 void ncf::Layer<T>::train(mcf::Mat<T>& grad, const Layer<T>& prev, T learning_rate, ecl::Computer& video){
-    if(!checkCore(prev.neurons)){
-        createCore(prev.neurons);
-        getCore(prev.neurons).send(video);
-    }
+    createCore(prev.neurons, video);
+
     optimizer::gd<T>(getCore(prev.neurons), grad, learning_rate, video);
 }
 
@@ -434,10 +451,7 @@ void ncf::Layer<T>::query(const Stock<T>& in, Stock<T>& out){
 template<typename T>
 void ncf::Layer<T>::query(const Stock<T>& in, Stock<T>& out, ecl::Computer& video){
     size_t prev_neurons = in.getLayer().getNeurons();
-    if(!checkCore(prev_neurons)){
-        createCore(prev_neurons);
-        getCore(prev_neurons).send(video);
-    }
+    createCore(prev_neurons, video);
     
     const Mat<T>& in_out = in.getConstOut();
 
@@ -517,6 +531,7 @@ void ncf::Layer<T>::grad(const Stock<T>& in, Stock<T>& out, const std::function<
 template<typename T>
 void ncf::Layer<T>::train(const Stock<T>& in, Stock<T>& out, T learning_rate) {
 	std::size_t prev_neurons = in.getLayer().getNeurons();
+
 	createCore(prev_neurons);
 	optimizer::gd<T>(getCore(prev_neurons), out.getGrad(prev_neurons), learning_rate);
 }
@@ -524,10 +539,7 @@ template<typename T>
 void ncf::Layer<T>::train(const Stock<T>& in, Stock<T>& out, T learning_rate, ecl::Computer& video) {
 	std::size_t prev_neurons = in.getLayer().getNeurons();
 
-	if (!checkCore(prev_neurons)) {
-		createCore(prev_neurons);
-		getCore(prev_neurons).send(video);
-	}
+	createCore(prev_neurons, video);
 	optimizer::gd<T>(getCore(prev_neurons), out.getGrad(prev_neurons), learning_rate, video);
 }
 
@@ -535,10 +547,7 @@ template<typename T>
 void ncf::Layer<T>::grad(const Stock<T>& in, Stock<T>& out, const std::string& div_cost, ecl::Computer& video) const {
 	std::size_t prev_neurons = in.getLayer().getNeurons();
 
-	if (!out.checkGrad(prev_neurons)){
-		out.createGrad(prev_neurons);
-		out.getGrad(prev_neurons).send(video);
-	}
+	out.createGrad(prev_neurons, video);
 
 	Mat<T>& error = out.getError();
 	Mat<T>& grad = out.getGrad(prev_neurons);
@@ -660,6 +669,16 @@ void ncf::Stock<T>::createGrad(std::size_t prev_neurons){
         grad.emplace(prev_neurons, std::move(new_grad));
     }
 }
+template<typename T>
+void ncf::Stock<T>::createGrad(std::size_t prev_neurons, ecl::Computer& video) {
+	if (!checkGrad(prev_neurons)) {
+		Mat<T> new_grad(layer.getNeurons(), prev_neurons);
+		video << new_grad;
+		layer.getComputerCoreGen()(new_grad, video);
+		grad.emplace(prev_neurons, std::move(new_grad));
+	}
+}
+
 template<typename T>
 void ncf::Stock<T>::releaseGrad(std::size_t prev_neurons){
     auto it = grad.find(prev_neurons);

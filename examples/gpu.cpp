@@ -20,10 +20,8 @@ int main()
     auto dcost = "ret = 2 * v;";
 
     // setup core generator
-    auto coregen = [](mcf::Mat<float>& A){
-        A.gen([](size_t i, size_t j){
-            return (float)(i + j) / 10.0f;
-        });
+    auto coregen = [](mcf::Mat<float>& A, ecl::Computer& video){
+        A.gen("ret = (float)(i + j) / 10.0f;", video);
     };
 
     video << data << answer;
