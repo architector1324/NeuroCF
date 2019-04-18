@@ -94,6 +94,9 @@ namespace ncf{
         void error(const Stock<T>&, Stock<T>&, Computer&) const;
 
         T cost(Stock<T>&, const std::function<T(const T&)>&) const;
+
+		void grad(const Stock<T>&, Stock<T>&, const std::function<T(const T&)>&) const;
+		void grad(const Stock<T>&, Stock<T>&, const std::string&, Computer&) const;
     };
 
     template<typename T>
@@ -430,7 +433,7 @@ void ncf::Layer<T>::query(const Stock<T>& in, Stock<T>& out, ecl::Computer& vide
     size_t prev_neurons = in.getLayer().getNeurons();
     if(!checkCore(prev_neurons)){
         createCore(prev_neurons);
-        send(video);
+        getCore(prev_neurons).send(video);
     }
     
     const Mat<T>& in_out = in.getConstOut();
@@ -490,6 +493,44 @@ T ncf::Layer<T>::cost(Stock<T>& error, const std::function<T(const T&)>& cost) c
     return curr_error.mreduce(cost) / static_cast<T>(count);
 }
 
+template<typename T>
+void ncf::Layer<T>::grad(const Stock<T>& in, Stock<T>& out, const std::function<T(const T&)>& div_cost) const {
+	std::size_t prev_neurons = in.getLayer().getNeurons();
+	out.createGrad(prev_neurons);
+
+	Mat<T>& error = out.getError();
+	Mat<T>& grad = out.getGrad(prev_neurons);
+	const Mat<T>& prev_out = in.getConstOut();
+
+	std::size_t count = error.getW() * error.getH();
+
+	error.map(div_cost, error);
+	error.mul(prev_out, grad, mcf::TRANSPOSE::SECOND);
+	grad.map([&](const T& v) {
+		return -v / static_cast<T>(count);
+	}, grad);
+}
+
+template<typename T>
+void ncf::Layer<T>::grad(const Stock<T>& in, Stock<T>& out, const std::string& div_cost, ecl::Computer& video) const {
+	std::size_t prev_neurons = in.getLayer().getNeurons();
+
+	if (!out.checkGrad(prev_neurons)){
+		out.createGrad(prev_neurons);
+		out.getGrad(prev_neurons).send(video);
+	}
+
+	Mat<T>& error = out.getError();
+	Mat<T>& grad = out.getGrad(prev_neurons);
+	const Mat<T>& prev_out = in.getConstOut();
+	
+	std::string count = std::to_string(static_cast<T>(error.getW() * error.getH()));
+
+	error.map(div_cost, error, video);
+	error.mul(prev_out, grad, video, mcf::TRANSPOSE::SECOND);
+	grad.map("ret = -v / " + count + ";", grad, video);
+}
+
 // Stock
 template<typename T>
 ncf::Stock<T>::Stock(const Layer<T>& layer, std::size_t examples) : layer(layer){
@@ -510,6 +551,7 @@ void ncf::Stock<T>::send(ecl::Computer& video){
 template<typename T>
 void ncf::Stock<T>::receive(ecl::Computer& video){
     for(auto& p : grad){
+		bool dump = p.second != nullptr;
         if(p.second != nullptr) video >> p.second;
     }
     video >> preout;

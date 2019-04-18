@@ -42,9 +42,13 @@ int main()
 
     // error
     ol.error(answer, ol_stock);
-    hl.error(ol_stock, hl_stock);
+	hl.error(ol_stock, hl_stock);
 
 	float e = ol.cost(ol_stock, ncf::cost::mse<float>);
+
+	// grad
+	hl.grad(il_stock, hl_stock, ncf::derivative::cost::mse<float>);
+	ol.grad(hl_stock, ol_stock, ncf::derivative::cost::mse<float>);
 
     // output
     std::cout << "Data" << std::endl;
@@ -61,6 +65,10 @@ int main()
     std::cout << "Error" << std::endl;
     std::cout << hl_stock.getConstError() << std::endl;
     std::cout << ol_stock.getConstError() << std::endl;
+
+	std::cout << "Grad" << std::endl;
+	std::cout << hl_stock.getGrad(5) << std::endl;
+	std::cout << ol_stock.getGrad(2) << std::endl;
 
     std::cout << "Total error " << e << std::endl;
 
