@@ -145,6 +145,54 @@ namespace ncf{
     };
 
     // High-level API
+    template<typename T>
+    class StockPool;
+
+    template<typename T>
+    class Net{
+    private:
+        std::vector<std::pair<Layer<T>*, bool>> layers;
+    public:
+        Net();
+        explicit Net(const std::vector<std::size_t>&);
+
+        void send(Computer&);
+        void receive(Computer&);
+        void grab(Computer&);
+        void release(Computer&);
+
+        template<typename U>
+        friend Computer& operator<<(Computer&, Net<U>&);
+        template<typename U>
+        friend Computer& operator>>(Computer&, Net<U>&);
+
+        std::size_t getLayersCount() const;
+        const Layer<T>* getConstLayer(std::size_t) const;
+        Layer<T>* getLayer(std::size_t);
+
+        ~Net();
+    };
+
+    template<typename T>
+    class StockPool{
+    private:
+        std::vector<std::pair<Stock<T>*, bool>> stocks;
+    public:
+        StockPool();
+        StockPool(const Net<T>&, std::size_t);
+
+        void send(Computer&);
+        void receive(Computer&);
+        void grab(Computer&);
+        void release(Computer&);
+
+        template<typename U>
+        friend Computer& operator<<(Computer&, Net<U>&);
+        template<typename U>
+        friend Computer& operator>>(Computer&, Net<U>&);
+
+        ~StockPool();
+    };
 }
 
 namespace ncf{
@@ -201,6 +249,9 @@ namespace ncf{
 }
 
 // IMPLEMENTATION
+
+// Low-level API
+
 // Layer
 template<typename T>
 ncf::Layer<T>::Layer(std::size_t neurons){
@@ -685,4 +736,119 @@ void ncf::Stock<T>::releaseGrad(std::size_t prev_neurons){
     if(it != grad.end()){
         grad.erase(it);
     }
+}
+
+// High-level API
+
+// Net
+template<typename T>
+ncf::Net<T>::Net() {}
+
+template<typename T>
+ncf::Net<T>::Net(const std::vector<std::size_t>& neurons){
+    for(auto n : neurons)
+        layers.push_back(std::make_pair(new Layer<T>(n), true));
+}
+
+template<typename T>
+void ncf::Net<T>::send(Computer& video){
+    for(auto& p : layers) p.first->send(video);
+}
+template<typename T>
+void ncf::Net<T>::receive(Computer& video){
+    for(auto& p : layers) p.first->receive(video);
+}
+template<typename T>
+void ncf::Net<T>::grab(Computer& video){
+    for(auto& p : layers) p.first->grab(video);
+}
+template<typename T>
+void ncf::Net<T>::release(Computer& video){
+    for(auto& p : layers) p.first->release(video);
+}
+
+namespace ncf{
+    template<typename T>
+    Computer& operator<<(Computer& video, Net<T>& net){
+        net.send(video);
+        return video;
+    }
+    template<typename T>
+    Computer& operator>>(Computer& video, Net<T>& net){
+        net.receive(video);
+        return video;
+    }
+}
+
+template<typename T>
+std::size_t ncf::Net<T>::getLayersCount() const{
+    return layers.size();
+}
+template<typename T>
+const ncf::Layer<T>* ncf::Net<T>::getConstLayer(std::size_t index) const{
+    return layers.at(index).first;
+}
+
+template<typename T>
+ncf::Layer<T>* ncf::Net<T>::getLayer(std::size_t index){
+    return layers.at(index).first;
+}
+
+template<typename T>
+ncf::Net<T>::~Net(){
+    for(auto& p : layers){
+        if(p.second == true) delete p.first;
+    }
+    layers.clear();
+}
+
+
+// StockPool
+template<typename T>
+ncf::StockPool<T>::StockPool() {}
+
+template<typename T>
+ncf::StockPool<T>::StockPool(const ncf::Net<T>& net, std::size_t examples){
+    size_t count = net.getLayersCount();
+    for(size_t i = 0; i < count; i++)
+        stocks.push_back(std::make_pair(new Stock<T>(*net.getConstLayer(i), examples), true));
+}
+
+
+template<typename T>
+void ncf::StockPool<T>::send(Computer& video){
+    for(auto& p : stocks) p.first->send(video);
+}
+template<typename T>
+void ncf::StockPool<T>::receive(Computer& video){
+    for(auto& p : stocks) p.first->receive(video);
+}
+template<typename T>
+void ncf::StockPool<T>::grab(Computer& video){
+    for(auto& p : stocks) p.first->grab(video);
+}
+template<typename T>
+void ncf::StockPool<T>::release(Computer& video){
+    for(auto& p : stocks) p.first->release(video);
+}
+
+namespace ncf{
+    template<typename T>
+    Computer& operator<<(Computer& video, StockPool<T>& net){
+        net.send(video);
+        return video;
+    }
+    template<typename T>
+    Computer& operator>>(Computer& video, StockPool<T>& net){
+        net.receive(video);
+        return video;
+    }
+}
+
+template<typename T>
+ncf::StockPool<T>::~StockPool(){
+    for(auto& p : stocks){
+        if(p.second == true) delete p.first;
+    }
+    stocks.clear();
 }

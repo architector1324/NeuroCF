@@ -27,68 +27,14 @@ int main()
     video << data << answer;
 
     // setup net
-    ncf::Layer<float> il(5);
-    il.setActivation(f);
+    ncf::Net<float> net({5, 2, 3});
 
-    ncf::Layer<float> hl(2);
-    hl.setActivation(f);
-    hl.setDerivative(df);
-    hl.setCoreGen(coregen);
-
-    ncf::Layer<float> ol(3);
-    ol.setActivation(f);
-    ol.setCoreGen(coregen);
-
-    video << il << hl << ol;
+    video << net;
 
     // setup containers
-    ncf::Stock<float> il_stock(il, 1);
-    ncf::Stock<float> hl_stock(hl, 1);
-    ncf::Stock<float> ol_stock(ol, 1);
+    ncf::StockPool<float> pool(net, 1);
 
-    video << il_stock << hl_stock << ol_stock;
-
-	// fit
-	float e = 1.0f;
-	for (size_t i = 0; i < 100; i++) {
-		// query
-		il.query(data, il_stock, video);
-		hl.query(il_stock, hl_stock, video);
-		ol.query(hl_stock, ol_stock, video);
-
-		// error
-		ol.error(answer, ol_stock, video);
-		hl.error(ol_stock, hl_stock, video);
-
-		video >> ol_stock;
-
-		e = ol.cost(ol_stock, ncf::cost::mse<float>);
-		std::cout << "Total error " << e << std::endl;
-
-		if (e < 0.001f) break;
-
-		// grad
-		hl.grad(il_stock, hl_stock, dcost, video);
-		ol.grad(hl_stock, ol_stock, dcost, video);
-
-		// train
-		hl.train(il_stock, hl_stock, 0.025, video);
-		ol.train(hl_stock, ol_stock, 0.025, video);
-	}
-
-    video >> il_stock >> hl_stock >> ol_stock;
-
-    // output
-    std::cout << "Data" << std::endl;
-    std::cout << data << std::endl;
-    
-    std::cout << "Net" << std::endl;
-    std::cout << il_stock.getConstOut() << std::endl;
-    std::cout << hl_stock.getConstOut() << std::endl;
-    std::cout << ol_stock.getConstOut() << std::endl;
-
-    std::cout << "Answer" << std::endl;
-    std::cout << answer << std::endl;
+    video << pool;
 
     ecl::System::release();
     return 0;
