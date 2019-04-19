@@ -177,6 +177,14 @@ namespace ncf{
 		void setCoreGens(const std::function<void(Mat<T>&, Computer&)>&);
 
         // partial setters
+        void setActivations(const std::vector<std::size_t>&, const std::function<T(const T&)>&);
+        void setDerivatives(const std::vector<std::size_t>&, const std::function<T(const T&)>&);
+
+        void setActivations(const std::vector<std::size_t>&, const std::string&);
+        void setDerivatives(const std::vector<std::size_t>&, const std::string&);
+
+        void setCoreGens(const std::vector<std::size_t>&, const std::function<void(Mat<T>&)>&);
+		void setCoreGens(const std::vector<std::size_t>&, const std::function<void(Mat<T>&, Computer&)>&);
 
         std::size_t getLayersCount() const;
         const Layer<T>* getConstLayer(std::size_t) const;
@@ -821,6 +829,33 @@ void ncf::Net<T>::setCoreGens(const std::function<void(mcf::Mat<T>&)>& coregen){
 template<typename T>
 void ncf::Net<T>::setCoreGens(const std::function<void(mcf::Mat<T>&, ecl::Computer&)>& coregen){
     for(auto& p : layers) p.first->setCoreGen(coregen);
+}
+
+template<typename T>
+void ncf::Net<T>::setActivations(const std::vector<std::size_t>& indexes, const std::function<T(const T&)>& activation){
+    for(auto n : indexes) layers.at(n).first->setActivation(activation);
+}
+template<typename T>
+void ncf::Net<T>::setDerivatives(const std::vector<std::size_t>& indexes, const std::function<T(const T&)>& derivative){
+    for(auto n : indexes) layers.at(n).first->setDerivative(derivative);
+}
+
+template<typename T>
+void ncf::Net<T>::setActivations(const std::vector<std::size_t>& indexes, const std::string& activation){
+    for(auto n : indexes) layers.at(n).first->setActivation(activation);
+}
+template<typename T>
+void ncf::Net<T>::setDerivatives(const std::vector<std::size_t>& indexes, const std::string& derivative){
+    for(auto n : indexes) layers.at(n).first->setDerivative(derivative);
+}
+
+template<typename T>
+void ncf::Net<T>::setCoreGens(const std::vector<std::size_t>& indexes, const std::function<void(mcf::Mat<T>&)>& coregen){
+    for(auto n : indexes) layers.at(n).first->setCoreGen(coregen);
+}
+template<typename T>
+void ncf::Net<T>::setCoreGens(const std::vector<std::size_t>& indexes, const std::function<void(mcf::Mat<T>&, ecl::Computer&)>& coregen){
+    for(auto n : indexes) layers.at(n).first->setCoreGen(coregen);
 }
 
 template<typename T>

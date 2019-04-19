@@ -20,8 +20,8 @@ int main()
     // setup net
     ncf::Net<float> net({5, 2, 3});
     net.setActivations(ncf::activation::lrelu<float>);
-    net.setDerivatives(ncf::derivative::activation::lrelu<float>);
-    net.setCoreGens(coregen);
+    net.setDerivatives({1}, ncf::derivative::activation::lrelu<float>);
+    net.setCoreGens({1, 2}, coregen);
 
     // setup containers
     ncf::StockPool<float> pool(net, 1);
