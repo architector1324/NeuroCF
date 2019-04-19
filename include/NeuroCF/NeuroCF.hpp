@@ -166,6 +166,18 @@ namespace ncf{
         template<typename U>
         friend Computer& operator>>(Computer&, Net<U>&);
 
+        // total setters
+        void setActivations(const std::function<T(const T&)>&);
+        void setDerivatives(const std::function<T(const T&)>&);
+
+        void setActivations(const std::string&);
+        void setDerivatives(const std::string&);
+
+        void setCoreGens(const std::function<void(Mat<T>&)>&);
+		void setCoreGens(const std::function<void(Mat<T>&, Computer&)>&);
+
+        // partial setters
+
         std::size_t getLayersCount() const;
         const Layer<T>* getConstLayer(std::size_t) const;
         Layer<T>* getLayer(std::size_t);
@@ -190,6 +202,10 @@ namespace ncf{
         friend Computer& operator<<(Computer&, Net<U>&);
         template<typename U>
         friend Computer& operator>>(Computer&, Net<U>&);
+
+        std::size_t getStocksCount() const;
+        const Stock<T>* getConstStock(std::size_t) const;
+        Stock<T>* getStock(std::size_t);
 
         ~StockPool();
     };
@@ -781,6 +797,33 @@ namespace ncf{
 }
 
 template<typename T>
+void ncf::Net<T>::setActivations(const std::function<T(const T&)>& activation){
+    for(auto& p : layers) p.first->setActivation(activation);
+}
+template<typename T>
+void ncf::Net<T>::setDerivatives(const std::function<T(const T&)>& derivative){
+    for(auto& p : layers) p.first->setDerivative(derivative);
+}
+
+template<typename T>
+void ncf::Net<T>::setActivations(const std::string& activation){
+    for(auto& p : layers) p.first->setActivation(activation);
+}
+template<typename T>
+void ncf::Net<T>::setDerivatives(const std::string& derivative){
+    for(auto& p : layers) p.first->setDerivative(derivative);
+}
+
+template<typename T>
+void ncf::Net<T>::setCoreGens(const std::function<void(mcf::Mat<T>&)>& coregen){
+    for(auto& p : layers) p.first->setCoreGen(coregen);
+}
+template<typename T>
+void ncf::Net<T>::setCoreGens(const std::function<void(mcf::Mat<T>&, ecl::Computer&)>& coregen){
+    for(auto& p : layers) p.first->setCoreGen(coregen);
+}
+
+template<typename T>
 std::size_t ncf::Net<T>::getLayersCount() const{
     return layers.size();
 }
@@ -844,6 +887,21 @@ namespace ncf{
         return video;
     }
 }
+
+template<typename T>
+std::size_t ncf::StockPool<T>::getStocksCount() const{
+    return stocks.size();
+}
+template<typename T>
+const ncf::Stock<T>* ncf::StockPool<T>::getConstStock(std::size_t index) const{
+    return stocks.at(index).first;
+}
+
+template<typename T>
+ncf::Stock<T>* ncf::StockPool<T>::getStock(std::size_t index){
+    return stocks.at(index).first;
+}
+
 
 template<typename T>
 ncf::StockPool<T>::~StockPool(){

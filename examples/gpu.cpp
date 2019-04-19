@@ -28,6 +28,9 @@ int main()
 
     // setup net
     ncf::Net<float> net({5, 2, 3});
+    net.setActivations(f);
+    net.setDerivatives(df);
+    net.setCoreGens(coregen);
 
     video << net;
 
