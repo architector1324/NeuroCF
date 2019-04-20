@@ -1,5 +1,5 @@
 #pragma once
-
+#include <variant>
 #include "MatrixCF.hpp"
 
 namespace ncf{
@@ -81,8 +81,8 @@ namespace ncf{
         void grad(Mat<T>&, const Mat<T>&, Mat<T>&, const std::function<T(const T&)>&) const;
         void grad(Mat<T>&, const Mat<T>&, Mat<T>&, const std::string&, Computer&) const;
 
-        void train(Mat<T>&, const Layer<T>&, T);
-        void train(Mat<T>&, const Layer<T>&, T, Computer& video);
+        void train(Mat<T>&, const Layer<T>&, const T&);
+        void train(Mat<T>&, const Layer<T>&, const T&, Computer& video);
 
         // High-level methods
         void query(const Mat<T>&, Stock<T>&) const;
@@ -102,8 +102,8 @@ namespace ncf{
 		void grad(const Stock<T>&, Stock<T>&, const std::function<T(const T&)>&) const;
 		void grad(const Stock<T>&, Stock<T>&, const std::string&, Computer&) const;
 
-		void train(const Stock<T>&, Stock<T>&, T);
-		void train(const Stock<T>&, Stock<T>&, T, Computer&);
+		void train(const Stock<T>&, Stock<T>&, const T&);
+		void train(const Stock<T>&, Stock<T>&, const T&, Computer&);
     };
 
     template<typename T>
@@ -149,6 +149,15 @@ namespace ncf{
     // High-level API
     template<typename T>
     class StockPool;
+
+	template<typename T>
+	struct FitFrame {
+		const Mat<T>& data;
+		const Mat<T>& answer;
+		StockPool<T>& pool;
+		std::function<T(const T&)> cost;
+		std::variant<std::function<T(const T&)>, std::string> div_cost;
+	};
 
     template<typename T>
     class Net{
@@ -210,8 +219,8 @@ namespace ncf{
         void train(StockPool<T>&, T, Computer&);
 
 		// High-level methods
-		T fit(const Mat<T>&, const Mat<T>&, StockPool<T>&, const std::function<T(const T&)>&, const std::function<T(const T&)>&, std::size_t, T, T);
-		T fit(const Mat<T>&, const Mat<T>&, StockPool<T>&, const std::function<T(const T&)>&, const std::string&, std::size_t, T, T, Computer&);
+		T fit(const FitFrame<T>&, const T&, std::size_t, const T&);
+		T fit(const FitFrame<T>&, const T&, std::size_t, const T&, Computer&);
 
         ~Net();
     };
@@ -285,12 +294,12 @@ namespace ncf{
 
     namespace optimizer{
         template<typename T>
-        void gd(Mat<T>& X, Mat<T>& grad, T learning_rate){
+        void gd(Mat<T>& X, Mat<T>& grad, const T& learning_rate){
             grad.mul(learning_rate, grad);
             X.sub(grad, X);
         }
         template<typename T>
-        void gd(Mat<T>& X, Mat<T>& grad, T learning_rate, ecl::Computer& video){
+        void gd(Mat<T>& X, Mat<T>& grad, const T& learning_rate, ecl::Computer& video){
             grad.mul(learning_rate, grad, video);
             X.sub(grad, X, video);
         }
@@ -512,12 +521,12 @@ void ncf::Layer<T>::grad(mcf::Mat<T>& error, const mcf::Mat<T>& prev_out, mcf::M
 }
 
 template<typename T>
-void ncf::Layer<T>::train(mcf::Mat<T>& grad, const Layer<T>& prev, T learning_rate){
+void ncf::Layer<T>::train(mcf::Mat<T>& grad, const Layer<T>& prev, const T& learning_rate){
     createCore(prev.neurons);
     optimizer::gd<T>(getCore(prev.neurons), grad, learning_rate);
 }
 template<typename T>
-void ncf::Layer<T>::train(mcf::Mat<T>& grad, const Layer<T>& prev, T learning_rate, ecl::Computer& video){
+void ncf::Layer<T>::train(mcf::Mat<T>& grad, const Layer<T>& prev, const T& learning_rate, ecl::Computer& video){
     createCore(prev.neurons, video);
 
     optimizer::gd<T>(getCore(prev.neurons), grad, learning_rate, video);
@@ -629,14 +638,14 @@ void ncf::Layer<T>::grad(const Stock<T>& in, Stock<T>& out, const std::function<
 }
 
 template<typename T>
-void ncf::Layer<T>::train(const Stock<T>& in, Stock<T>& out, T learning_rate) {
+void ncf::Layer<T>::train(const Stock<T>& in, Stock<T>& out, const T& learning_rate) {
 	std::size_t prev_neurons = in.getLayer().getNeurons();
 
 	createCore(prev_neurons);
 	optimizer::gd<T>(getCore(prev_neurons), out.getGrad(prev_neurons), learning_rate);
 }
 template<typename T>
-void ncf::Layer<T>::train(const Stock<T>& in, Stock<T>& out, T learning_rate, ecl::Computer& video) {
+void ncf::Layer<T>::train(const Stock<T>& in, Stock<T>& out, const T& learning_rate, ecl::Computer& video) {
 	std::size_t prev_neurons = in.getLayer().getNeurons();
 
 	createCore(prev_neurons, video);
@@ -1003,7 +1012,13 @@ void ncf::Net<T>::train(StockPool<T>& pool, T learning_rate, ecl::Computer& vide
 }
 
 template<typename T>
-T ncf::Net<T>::fit(const mcf::Mat<T>& data, const mcf::Mat<T>& answer, StockPool<T>& pool, const std::function<T(const T&)>& cost, const std::function<T(const T&)>& div_cost, std::size_t max_iterations, T min_error, T learning_rate) {
+T ncf::Net<T>::fit(const FitFrame<T>& frame, const T& learning_rate, std::size_t max_iterations, const T& min_error) {
+	const mcf::Mat<T>& data = frame.data;
+	const mcf::Mat<T>& answer = frame.answer;
+	StockPool<T>& pool = frame.pool;
+	const std::function<T(const T&)>& cost = frame.cost;
+	const std::function<T(const T&)>& div_cost = std::get<0>(frame.div_cost);
+
 	T e = 1;
 	for (size_t i = 0; i < max_iterations; i++) {
 		query(data, pool);
@@ -1019,7 +1034,13 @@ T ncf::Net<T>::fit(const mcf::Mat<T>& data, const mcf::Mat<T>& answer, StockPool
 	return e;
 }
 template<typename T>
-T ncf::Net<T>::fit(const mcf::Mat<T>& data, const mcf::Mat<T>& answer, StockPool<T>& pool, const std::function<T(const T&)>& cost, const std::string& div_cost, std::size_t max_iterations, T min_error, T learning_rate, ecl::Computer& video) {
+T ncf::Net<T>::fit(const FitFrame<T>& frame, const T& learning_rate, std::size_t max_iterations, const T& min_error, ecl::Computer& video) {
+	const mcf::Mat<T>& data = frame.data;
+	const mcf::Mat<T>& answer = frame.answer;
+	StockPool<T>& pool = frame.pool;
+	const std::function<T(const T&)>& cost = frame.cost;
+	const std::string& div_cost = std::get<1>(frame.div_cost);
+
 	T e = 1;
 	for (size_t i = 0; i < max_iterations; i++) {
 		query(data, pool, video);

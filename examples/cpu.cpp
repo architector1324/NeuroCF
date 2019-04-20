@@ -25,7 +25,9 @@ int main()
     ncf::StockPool<float> pool(net, 1);
 
     // fit
-	float e = net.fit(data, answer, pool, ncf::cost::mse<float>, ncf::derivative::cost::mse<float>, 100, 0.001f, 0.025f);
+	ncf::FitFrame<float> frame = {data, answer, pool, ncf::cost::mse<float>, ncf::derivative::cost::mse<float>};
+
+	float e = net.fit(frame, 0.025f, 100, 0.001f);
 
     // output
     std::cout << "Data" << std::endl;

@@ -40,7 +40,9 @@ int main()
 	video << pool;
 
 	// fit
-	float e = net.fit(data, answer, pool, ncf::cost::mse<float>, dcost, 100, 0.001f, 0.025f, video);
+	ncf::FitFrame<float> frame = {data, answer, pool, ncf::cost::mse<float>, dcost};
+
+	float e = net.fit(frame, 0.025f, 100, 0.001f, video);
 	video >> pool;
 
     // output
