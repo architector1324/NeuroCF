@@ -17,9 +17,9 @@ int main()
 	video << data << answer;
 
     // setup functions
-    auto f = "ret = v > 0 ? v : v * 0.1f;";
-    auto df = "ret = v > 0 ? 1 : 0.1f;";
-    auto dcost = "ret = 2 * v;";
+    auto lrelu = "ret = v > 0 ? v : v * 0.1f;";
+    auto div_lrelu = "ret = v > 0 ? 1 : 0.1f;";
+    auto div_mse = "ret = 2 * v;";
 
     // setup core generator
     auto coregen = [](mcf::Mat<float>& A, ecl::Computer& video){
@@ -28,8 +28,8 @@ int main()
 
     // setup net
     ncf::Net<float> net({5, 2, 3});
-    net.setActivations(f);
-    net.setDerivatives({1}, df);
+    net.setActivations(lrelu);
+    net.setDerivatives({1}, div_lrelu);
     net.setCoreGens({1, 2}, coregen);
 
     video << net;
@@ -40,7 +40,7 @@ int main()
 	video << pool;
 
 	// fit
-	ncf::FitFrame<float> frame = {data, answer, pool, ncf::cost::mse<float>, dcost};
+	ncf::FitFrame<float> frame = {data, answer, pool, ncf::cost::mse<float>, div_mse};
 
 	float e = net.fit(frame, 0.025f, 100, 0.001f, video);
 	video >> pool;

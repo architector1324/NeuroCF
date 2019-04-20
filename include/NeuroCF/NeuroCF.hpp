@@ -168,6 +168,7 @@ namespace ncf{
     public:
         Net();
         explicit Net(const std::vector<std::size_t>&);
+		explicit Net(const std::vector<Layer<T>*>&);
 
         void send(Computer&);
         void receive(Computer&);
@@ -178,6 +179,9 @@ namespace ncf{
         friend Computer& operator<<(Computer&, Net<U>&);
         template<typename U>
         friend Computer& operator>>(Computer&, Net<U>&);
+
+		void push_back(Layer<T>*);
+		Layer<T>* pop_back();
 
         // total setters
         void setActivations(const std::function<T(const T&)>&);
@@ -244,6 +248,9 @@ namespace ncf{
         friend Computer& operator>>(Computer&, StockPool<U>&);
 		template<typename U>
 		friend std::ostream& operator<<(std::ostream&, StockPool<U>&);
+
+		void push_back(Stock<T>*);
+		Stock<T>* pop_back();
 
         std::size_t getStocksCount() const;
         const Stock<T>& getConstStock(std::size_t) const;
@@ -818,6 +825,11 @@ ncf::Net<T>::Net(const std::vector<std::size_t>& neurons){
     for(auto n : neurons)
         layers.push_back(std::make_pair(new Layer<T>(n), true));
 }
+template<typename T>
+ncf::Net<T>::Net(const std::vector<Layer<T>*>& layers) {
+	for (auto* l : layers)
+		this->layers.push_back(std::make_pair(l, false));
+}
 
 template<typename T>
 void ncf::Net<T>::send(ecl::Computer& video){
@@ -847,6 +859,17 @@ namespace ncf{
         net.receive(video);
         return video;
     }
+}
+
+template<typename T>
+void ncf::Net<T>::push_back(Layer<T>* layer) {
+	layers.push_back(std::make_pair(layer, false));
+}
+template<typename T>
+ncf::Layer<T>* ncf::Net<T>::pop_back() {
+	Layer<T>* result = layers.back().first;
+	layers.pop_back();
+	return result;
 }
 
 template<typename T>
@@ -1112,6 +1135,17 @@ namespace ncf{
 		s << pool.getStock(pool.getStocksCount() - 1);
 		return s;
 	}
+}
+
+template<typename T>
+void ncf::StockPool<T>::push_back(Stock<T>* stock) {
+	stocks.push_back(std::make_pair(stock, false));
+}
+template<typename T>
+ncf::Stock<T>* ncf::StockPool<T>::pop_back() {
+	Layer<T>* result = stocks.back().first;
+	stocks.pop_back();
+	return result;
 }
 
 template<typename T>
