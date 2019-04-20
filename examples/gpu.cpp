@@ -39,6 +39,15 @@ int main()
 
     video << pool;
 
+    // query
+    net.query(data, pool, video);
+
+    video >> pool;
+
+    // output
+    for(size_t i = 0; i < pool.getStocksCount(); i++)
+        std::cout << pool.getConstStock(i).getConstOut() << std::endl;
+
     ecl::System::release();
     return 0;
 }

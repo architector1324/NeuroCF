@@ -152,6 +152,8 @@ namespace ncf{
     class Net{
     private:
         std::vector<std::pair<Layer<T>*, bool>> layers;
+
+        void checkStockPool(const StockPool<T>&, const std::string&);
     public:
         Net();
         explicit Net(const std::vector<std::size_t>&);
@@ -187,8 +189,12 @@ namespace ncf{
 		void setCoreGens(const std::vector<std::size_t>&, const std::function<void(Mat<T>&, Computer&)>&);
 
         std::size_t getLayersCount() const;
-        const Layer<T>* getConstLayer(std::size_t) const;
-        Layer<T>* getLayer(std::size_t);
+        const Layer<T>& getConstLayer(std::size_t) const;
+        Layer<T>& getLayer(std::size_t);
+
+        // methods
+        void query(const mcf::Mat<T>&, StockPool<T>&);
+        void query(const mcf::Mat<T>&, StockPool<T>&, Computer&);
 
         ~Net();
     };
@@ -212,8 +218,8 @@ namespace ncf{
         friend Computer& operator>>(Computer&, Net<U>&);
 
         std::size_t getStocksCount() const;
-        const Stock<T>* getConstStock(std::size_t) const;
-        Stock<T>* getStock(std::size_t);
+        const Stock<T>& getConstStock(std::size_t) const;
+        Stock<T>& getStock(std::size_t);
 
         ~StockPool();
     };
@@ -766,6 +772,12 @@ void ncf::Stock<T>::releaseGrad(std::size_t prev_neurons){
 
 // Net
 template<typename T>
+void ncf::Net<T>::checkStockPool(const ncf::StockPool<T>& pool, const std::string& where){
+    if(pool.getStocksCount() != layers.size())
+        throw std::runtime_error("Net [" + where + "]: invalid pool");
+}
+
+template<typename T>
 ncf::Net<T>::Net() {}
 
 template<typename T>
@@ -863,13 +875,34 @@ std::size_t ncf::Net<T>::getLayersCount() const{
     return layers.size();
 }
 template<typename T>
-const ncf::Layer<T>* ncf::Net<T>::getConstLayer(std::size_t index) const{
-    return layers.at(index).first;
+const ncf::Layer<T>& ncf::Net<T>::getConstLayer(std::size_t index) const{
+    return *layers.at(index).first;
 }
 
 template<typename T>
-ncf::Layer<T>* ncf::Net<T>::getLayer(std::size_t index){
-    return layers.at(index).first;
+ncf::Layer<T>& ncf::Net<T>::getLayer(std::size_t index){
+    return *layers.at(index).first;
+}
+
+template<typename T>
+void ncf::Net<T>::query(const mcf::Mat<T>& in, StockPool<T>& pool){
+    checkStockPool(pool, "query");
+
+    layers.at(0).first->query(in, pool.getStock(0));
+
+    size_t count = pool.getStocksCount();
+    for(size_t i = 1; i < count; i++)
+        layers.at(i).first->query(pool.getStock(i - 1), pool.getStock(i));
+}
+template<typename T>
+void ncf::Net<T>::query(const mcf::Mat<T>& in, StockPool<T>& pool, ecl::Computer& video){
+    checkStockPool(pool, "query");
+
+    layers.at(0).first->query(in, pool.getStock(0), video);
+
+    size_t count = pool.getStocksCount();
+    for(size_t i = 1; i < count; i++)
+        layers.at(i).first->query(pool.getStock(i - 1), pool.getStock(i), video);
 }
 
 template<typename T>
@@ -889,7 +922,7 @@ template<typename T>
 ncf::StockPool<T>::StockPool(const ncf::Net<T>& net, std::size_t examples){
     size_t count = net.getLayersCount();
     for(size_t i = 0; i < count; i++)
-        stocks.push_back(std::make_pair(new Stock<T>(*net.getConstLayer(i), examples), true));
+        stocks.push_back(std::make_pair(new Stock<T>(net.getConstLayer(i), examples), true));
 }
 
 
@@ -928,13 +961,13 @@ std::size_t ncf::StockPool<T>::getStocksCount() const{
     return stocks.size();
 }
 template<typename T>
-const ncf::Stock<T>* ncf::StockPool<T>::getConstStock(std::size_t index) const{
-    return stocks.at(index).first;
+const ncf::Stock<T>& ncf::StockPool<T>::getConstStock(std::size_t index) const{
+    return *stocks.at(index).first;
 }
 
 template<typename T>
-ncf::Stock<T>* ncf::StockPool<T>::getStock(std::size_t index){
-    return stocks.at(index).first;
+ncf::Stock<T>& ncf::StockPool<T>::getStock(std::size_t index){
+    return *stocks.at(index).first;
 }
 
 

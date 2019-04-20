@@ -26,5 +26,12 @@ int main()
     // setup containers
     ncf::StockPool<float> pool(net, 1);
 
+    // query
+    net.query(data, pool);
+
+    // output
+    for(size_t i = 0; i < pool.getStocksCount(); i++)
+        std::cout << pool.getConstStock(i).getConstOut() << std::endl;
+
     return 0;
 }
