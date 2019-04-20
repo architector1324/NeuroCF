@@ -26,12 +26,21 @@ int main()
     // setup containers
     ncf::StockPool<float> pool(net, 1);
 
-    // compute
-    net.query(data, pool);
-    net.error(answer, pool);
-    float e = net.cost(pool, ncf::cost::mse<float>);
+    // fit
+    float e = 1.0f;
 
-    net.grad(pool, ncf::derivative::cost::mse<float>);
+    for(size_t i = 0; i < 100; i++){
+        net.query(data, pool);
+        net.error(answer, pool);
+
+        e = net.cost(pool, ncf::cost::mse<float>);
+        if(e < 0.001f) break;
+        std::cout << "Total error " << e << std::endl;
+
+        net.grad(pool, ncf::derivative::cost::mse<float>);
+        net.train(pool, 0.025);
+    }
+    std::cout << "Total error " << e << std::endl;
 
     // output
     std::cout << "Data" << std::endl;
@@ -43,12 +52,6 @@ int main()
 
     std::cout << "Answer" << std::endl;
     std::cout << answer << std::endl;
-
-    std::cout << "Grad" << std::endl;
-    for(size_t i = 1; i < pool.getStocksCount(); i++)
-        std::cout << pool.getStock(i).getGrad(net.getConstLayer(i - 1).getNeurons()) << std::endl;
-
-    std::cout << "Total error " << e << std::endl;
 
     return 0;
 }

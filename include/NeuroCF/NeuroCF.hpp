@@ -204,6 +204,9 @@ namespace ncf{
         void grad(StockPool<T>&, const std::function<T(const T&)>&);
         void grad(StockPool<T>&, const std::string&, Computer&);
 
+        void train(StockPool<T>&, T);
+        void train(StockPool<T>&, T, Computer&);
+
         ~Net();
     };
 
@@ -940,7 +943,7 @@ void ncf::Net<T>::error(const mcf::Mat<T>& answer, StockPool<T>& pool, ecl::Comp
 
 template<typename T>
 T ncf::Net<T>::cost(const StockPool<T>& pool, const std::function<T(const T&)>& cost) const{
-    checkStockPool(pool, "error");
+    checkStockPool(pool, "cost");
 
     size_t count = pool.getStocksCount();
     size_t last = count - 1;
@@ -965,6 +968,25 @@ void ncf::Net<T>::grad(StockPool<T>& pool, const std::string& div_cost, ecl::Com
     
     for(size_t i = 1; i < count; i++)
         layers.at(i).first->grad(pool.getConstStock(i - 1), pool.getStock(i), div_cost, video);
+}
+
+template<typename T>
+void ncf::Net<T>::train(StockPool<T>& pool, T learning_rate){
+    checkStockPool(pool, "train");
+
+    size_t count = pool.getStocksCount();
+    
+    for(size_t i = 1; i < count; i++)
+        layers.at(i).first->train(pool.getConstStock(i - 1), pool.getStock(i), learning_rate);
+}
+template<typename T>
+void ncf::Net<T>::train(StockPool<T>& pool, T learning_rate, Computer& video){
+    checkStockPool(pool, "train");
+
+    size_t count = pool.getStocksCount();
+    
+    for(size_t i = 1; i < count; i++)
+        layers.at(i).first->train(pool.getConstStock(i - 1), pool.getStock(i), learning_rate, video);
 }
 
 template<typename T>
