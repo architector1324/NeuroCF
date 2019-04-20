@@ -153,7 +153,7 @@ namespace ncf{
     private:
         std::vector<std::pair<Layer<T>*, bool>> layers;
 
-        void checkStockPool(const StockPool<T>&, const std::string&);
+        void checkStockPool(const StockPool<T>&, const std::string&) const;
     public:
         Net();
         explicit Net(const std::vector<std::size_t>&);
@@ -192,12 +192,14 @@ namespace ncf{
         const Layer<T>& getConstLayer(std::size_t) const;
         Layer<T>& getLayer(std::size_t);
 
-        // methods
+        // Low-level methods
         void query(const Mat<T>&, StockPool<T>&);
         void query(const Mat<T>&, StockPool<T>&, Computer&);
 
         void error(const Mat<T>&, StockPool<T>&);
         void error(const Mat<T>&, StockPool<T>&, Computer&);
+
+        T cost(const StockPool<T>&, const std::function<T(const T&)>&) const;
 
         void grad(StockPool<T>&, const std::function<T(const T&)>&);
         void grad(StockPool<T>&, const std::string&, Computer&);
@@ -778,7 +780,7 @@ void ncf::Stock<T>::releaseGrad(std::size_t prev_neurons){
 
 // Net
 template<typename T>
-void ncf::Net<T>::checkStockPool(const ncf::StockPool<T>& pool, const std::string& where){
+void ncf::Net<T>::checkStockPool(const ncf::StockPool<T>& pool, const std::string& where) const{
     if(pool.getStocksCount() != layers.size())
         throw std::runtime_error("Net [" + where + "]: invalid pool");
 }
@@ -934,6 +936,16 @@ void ncf::Net<T>::error(const mcf::Mat<T>& answer, StockPool<T>& pool, ecl::Comp
 
     for(int i = last - 1; i >= 1; i--)
         layers.at(i).first->error(pool.getConstStock(i + 1), pool.getStock(i), video);
+}
+
+template<typename T>
+T ncf::Net<T>::cost(const StockPool<T>& pool, const std::function<T(const T&)>& cost) const{
+    checkStockPool(pool, "error");
+
+    size_t count = pool.getStocksCount();
+    size_t last = count - 1;
+
+    return layers.at(last).first->cost(pool.getConstStock(last), cost);
 }
 
 template<typename T>

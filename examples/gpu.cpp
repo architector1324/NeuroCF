@@ -42,6 +42,10 @@ int main()
     // compute
     net.query(data, pool, video);
     net.error(answer, pool, video);
+
+    video >> pool;
+    float e = net.cost(pool, ncf::cost::mse<float>);
+
     net.grad(pool, dcost, video);
 
     video >> pool;
@@ -60,6 +64,8 @@ int main()
     std::cout << "Grad" << std::endl;
     for(size_t i = 1; i < pool.getStocksCount(); i++)
         std::cout << pool.getStock(i).getGrad(net.getConstLayer(i - 1).getNeurons()) << std::endl;
+
+    std::cout << "Total error " << e << std::endl;
 
     ecl::System::release();
     return 0;
