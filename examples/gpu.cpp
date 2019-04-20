@@ -39,14 +39,26 @@ int main()
 
     video << pool;
 
-    // query
+    // compute
     net.query(data, pool, video);
+    net.error(answer, pool, video);
 
     video >> pool;
 
     // output
+    std::cout << "Data" << std::endl;
+    std::cout << data << std::endl;
+
+    std::cout << "Net" << std::endl;
     for(size_t i = 0; i < pool.getStocksCount(); i++)
         std::cout << pool.getConstStock(i).getConstOut() << std::endl;
+
+    std::cout << "Answer" << std::endl;
+    std::cout << answer << std::endl;
+
+    std::cout << "Error" << std::endl;
+    for(size_t i = 1; i < pool.getStocksCount(); i++)
+        std::cout << pool.getConstStock(i).getConstError() << std::endl;
 
     ecl::System::release();
     return 0;

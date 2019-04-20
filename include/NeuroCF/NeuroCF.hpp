@@ -196,6 +196,9 @@ namespace ncf{
         void query(const mcf::Mat<T>&, StockPool<T>&);
         void query(const mcf::Mat<T>&, StockPool<T>&, Computer&);
 
+        void error(const mcf::Mat<T>&, StockPool<T>&);
+        void error(const mcf::Mat<T>&, StockPool<T>&, Computer&);
+
         ~Net();
     };
 
@@ -903,6 +906,31 @@ void ncf::Net<T>::query(const mcf::Mat<T>& in, StockPool<T>& pool, ecl::Computer
     size_t count = pool.getStocksCount();
     for(size_t i = 1; i < count; i++)
         layers.at(i).first->query(pool.getStock(i - 1), pool.getStock(i), video);
+}
+
+template<typename T>
+void ncf::Net<T>::error(const mcf::Mat<T>& answer, StockPool<T>& pool){
+    checkStockPool(pool, "error");
+
+    size_t count = pool.getStocksCount();
+    size_t last = count - 1;
+
+    layers.at(last).first->error(answer, pool.getStock(last));
+
+    for(int i = last - 1; i >= 1; i--)
+        layers.at(i).first->error(pool.getConstStock(i + 1), pool.getStock(i));
+}
+template<typename T>
+void ncf::Net<T>::error(const mcf::Mat<T>& answer, StockPool<T>& pool, ecl::Computer& video){
+    checkStockPool(pool, "error");
+
+    size_t count = pool.getStocksCount();
+    size_t last = count - 1;
+
+    layers.at(last).first->error(answer, pool.getStock(last), video);
+
+    for(int i = last - 1; i >= 1; i--)
+        layers.at(i).first->error(pool.getConstStock(i + 1), pool.getStock(i), video);
 }
 
 template<typename T>
