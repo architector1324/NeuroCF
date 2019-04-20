@@ -193,11 +193,14 @@ namespace ncf{
         Layer<T>& getLayer(std::size_t);
 
         // methods
-        void query(const mcf::Mat<T>&, StockPool<T>&);
-        void query(const mcf::Mat<T>&, StockPool<T>&, Computer&);
+        void query(const Mat<T>&, StockPool<T>&);
+        void query(const Mat<T>&, StockPool<T>&, Computer&);
 
-        void error(const mcf::Mat<T>&, StockPool<T>&);
-        void error(const mcf::Mat<T>&, StockPool<T>&, Computer&);
+        void error(const Mat<T>&, StockPool<T>&);
+        void error(const Mat<T>&, StockPool<T>&, Computer&);
+
+        void grad(StockPool<T>&, const std::function<T(const T&)>&);
+        void grad(StockPool<T>&, const std::string&, Computer&);
 
         ~Net();
     };
@@ -931,6 +934,25 @@ void ncf::Net<T>::error(const mcf::Mat<T>& answer, StockPool<T>& pool, ecl::Comp
 
     for(int i = last - 1; i >= 1; i--)
         layers.at(i).first->error(pool.getConstStock(i + 1), pool.getStock(i), video);
+}
+
+template<typename T>
+void ncf::Net<T>::grad(StockPool<T>& pool, const std::function<T(const T&)>& div_cost){
+    checkStockPool(pool, "grad");
+
+    size_t count = pool.getStocksCount();
+    
+    for(size_t i = 1; i < count; i++)
+        layers.at(i).first->grad(pool.getConstStock(i - 1), pool.getStock(i), div_cost);
+}
+template<typename T>
+void ncf::Net<T>::grad(StockPool<T>& pool, const std::string& div_cost, ecl::Computer& video){
+    checkStockPool(pool, "grad");
+
+    size_t count = pool.getStocksCount();
+    
+    for(size_t i = 1; i < count; i++)
+        layers.at(i).first->grad(pool.getConstStock(i - 1), pool.getStock(i), div_cost, video);
 }
 
 template<typename T>

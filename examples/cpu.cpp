@@ -29,6 +29,7 @@ int main()
     // compute
     net.query(data, pool);
     net.error(answer, pool);
+    net.grad(pool, ncf::derivative::cost::mse<float>);
 
     // output
     std::cout << "Data" << std::endl;
@@ -41,9 +42,9 @@ int main()
     std::cout << "Answer" << std::endl;
     std::cout << answer << std::endl;
 
-    std::cout << "Error" << std::endl;
+    std::cout << "Grad" << std::endl;
     for(size_t i = 1; i < pool.getStocksCount(); i++)
-        std::cout << pool.getConstStock(i).getConstError() << std::endl;
+        std::cout << pool.getStock(i).getGrad(net.getConstLayer(i - 1).getNeurons()) << std::endl;
 
     return 0;
 }
