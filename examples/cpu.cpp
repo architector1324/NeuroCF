@@ -12,9 +12,7 @@ int main()
 
     // setup core generator
     auto coregen = [](mcf::Mat<float>& A){
-        A.gen([](size_t i, size_t j){
-            return (float)(i + j) / 10.0f;
-        });
+		A.full(0.01f);
     };
 
     // setup net
@@ -27,20 +25,7 @@ int main()
     ncf::StockPool<float> pool(net, 1);
 
     // fit
-    float e = 1.0f;
-
-    for(size_t i = 0; i < 100; i++){
-        net.query(data, pool);
-        net.error(answer, pool);
-
-        e = net.cost(pool, ncf::cost::mse<float>);
-        if(e < 0.001f) break;
-        std::cout << "Total error " << e << std::endl;
-
-        net.grad(pool, ncf::derivative::cost::mse<float>);
-        net.train(pool, 0.025);
-    }
-    std::cout << "Total error " << e << std::endl;
+	float e = net.fit(data, answer, pool, ncf::cost::mse<float>, ncf::derivative::cost::mse<float>, 100, 0.001f, 0.025f);
 
     // output
     std::cout << "Data" << std::endl;
@@ -52,6 +37,8 @@ int main()
 
     std::cout << "Answer" << std::endl;
     std::cout << answer << std::endl;
+
+	std::cout << "Total error " << e << std::endl;
 
     return 0;
 }

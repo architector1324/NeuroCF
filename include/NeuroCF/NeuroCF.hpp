@@ -207,6 +207,10 @@ namespace ncf{
         void train(StockPool<T>&, T);
         void train(StockPool<T>&, T, Computer&);
 
+		// High-level methods
+		T fit(const Mat<T>&, const Mat<T>&, StockPool<T>&, const std::function<T(const T&)>&, const std::function<T(const T&)>&, std::size_t, T, T);
+		T fit(const Mat<T>&, const Mat<T>&, StockPool<T>&, const std::function<T(const T&)>&, const std::string&, std::size_t, T, T, Computer&);
+
         ~Net();
     };
 
@@ -798,19 +802,19 @@ ncf::Net<T>::Net(const std::vector<std::size_t>& neurons){
 }
 
 template<typename T>
-void ncf::Net<T>::send(Computer& video){
+void ncf::Net<T>::send(ecl::Computer& video){
     for(auto& p : layers) p.first->send(video);
 }
 template<typename T>
-void ncf::Net<T>::receive(Computer& video){
+void ncf::Net<T>::receive(ecl::Computer& video){
     for(auto& p : layers) p.first->receive(video);
 }
 template<typename T>
-void ncf::Net<T>::grab(Computer& video){
+void ncf::Net<T>::grab(ecl::Computer& video){
     for(auto& p : layers) p.first->grab(video);
 }
 template<typename T>
-void ncf::Net<T>::release(Computer& video){
+void ncf::Net<T>::release(ecl::Computer& video){
     for(auto& p : layers) p.first->release(video);
 }
 
@@ -980,7 +984,7 @@ void ncf::Net<T>::train(StockPool<T>& pool, T learning_rate){
         layers.at(i).first->train(pool.getConstStock(i - 1), pool.getStock(i), learning_rate);
 }
 template<typename T>
-void ncf::Net<T>::train(StockPool<T>& pool, T learning_rate, Computer& video){
+void ncf::Net<T>::train(StockPool<T>& pool, T learning_rate, ecl::Computer& video){
     checkStockPool(pool, "train");
 
     size_t count = pool.getStocksCount();
@@ -988,6 +992,41 @@ void ncf::Net<T>::train(StockPool<T>& pool, T learning_rate, Computer& video){
     for(size_t i = 1; i < count; i++)
         layers.at(i).first->train(pool.getConstStock(i - 1), pool.getStock(i), learning_rate, video);
 }
+
+template<typename T>
+T ncf::Net<T>::fit(const mcf::Mat<T>& data, const mcf::Mat<T>& answer, StockPool<T>& pool, const std::function<T(const T&)>& cost, const std::function<T(const T&)>& div_cost, std::size_t max_iterations, T min_error, T learning_rate) {
+	T e = 1;
+	for (size_t i = 0; i < max_iterations; i++) {
+		query(data, pool);
+		error(answer, pool);
+
+		e = this->cost(pool, cost);
+		if (e < min_error) break;
+
+		grad(pool, div_cost);
+		train(pool, learning_rate);
+	}
+
+	return e;
+}
+template<typename T>
+T ncf::Net<T>::fit(const mcf::Mat<T>& data, const mcf::Mat<T>& answer, StockPool<T>& pool, const std::function<T(const T&)>& cost, const std::string& div_cost, std::size_t max_iterations, T min_error, T learning_rate, ecl::Computer& video) {
+	T e = 1;
+	for (size_t i = 0; i < max_iterations; i++) {
+		query(data, pool, video);
+		error(answer, pool, video);
+
+		video >> pool.getStock(pool.getStocksCount() - 1).getError();
+		e = this->cost(pool, cost);
+		if (e < min_error) break;
+
+		grad(pool, div_cost, video);
+		train(pool, learning_rate, video);
+	}
+
+	return e;
+}
+
 
 template<typename T>
 ncf::Net<T>::~Net(){
@@ -1011,19 +1050,19 @@ ncf::StockPool<T>::StockPool(const ncf::Net<T>& net, std::size_t examples){
 
 
 template<typename T>
-void ncf::StockPool<T>::send(Computer& video){
+void ncf::StockPool<T>::send(ecl::Computer& video){
     for(auto& p : stocks) p.first->send(video);
 }
 template<typename T>
-void ncf::StockPool<T>::receive(Computer& video){
+void ncf::StockPool<T>::receive(ecl::Computer& video){
     for(auto& p : stocks) p.first->receive(video);
 }
 template<typename T>
-void ncf::StockPool<T>::grab(Computer& video){
+void ncf::StockPool<T>::grab(ecl::Computer& video){
     for(auto& p : stocks) p.first->grab(video);
 }
 template<typename T>
-void ncf::StockPool<T>::release(Computer& video){
+void ncf::StockPool<T>::release(ecl::Computer& video){
     for(auto& p : stocks) p.first->release(video);
 }
 

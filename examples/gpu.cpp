@@ -14,6 +14,8 @@ int main()
     data.full(2.0f);
     answer.full(3.0f);
 
+	video << data << answer;
+
     // setup functions
     auto f = "ret = v > 0 ? v : v * 0.1f;";
     auto df = "ret = v > 0 ? 1 : 0.1f;";
@@ -21,10 +23,8 @@ int main()
 
     // setup core generator
     auto coregen = [](mcf::Mat<float>& A, ecl::Computer& video){
-        A.gen("ret = (float)(i + j) / 10.0f;", video);
+		A.full(0.01f, video);
     };
-
-    video << data << answer;
 
     // setup net
     ncf::Net<float> net({5, 2, 3});
@@ -36,38 +36,25 @@ int main()
 
     // setup containers
     ncf::StockPool<float> pool(net, 1);
+	
+	video << pool;
 
-    video << pool;
-
-    // fit
-    float e = 1.0f;
-
-    for(size_t i = 0; i < 100; i++){
-        net.query(data, pool, video);
-        net.error(answer, pool, video);
-
-        video >> pool;
-        e = net.cost(pool, ncf::cost::mse<float>);
-        if(e < 0.001f) break;
-        std::cout << "Total error " << e << std::endl;
-
-        net.grad(pool, dcost, video);
-        net.train(pool, 0.025, video);
-    }
-    std::cout << "Total error " << e << std::endl;
-
-    video >> pool;
+	// fit
+	float e = net.fit(data, answer, pool, ncf::cost::mse<float>, dcost, 100, 0.001f, 0.025f, video);
+	video >> pool;
 
     // output
-    std::cout << "Data" << std::endl;
-    std::cout << data << std::endl;
+	std::cout << "Data" << std::endl;
+	std::cout << data << std::endl;
 
-    std::cout << "Net" << std::endl;
-    for(size_t i = 0; i < pool.getStocksCount(); i++)
-        std::cout << pool.getConstStock(i).getConstOut() << std::endl;
-    
-    std::cout << "Answer" << std::endl;
-    std::cout << answer << std::endl;
+	std::cout << "Net" << std::endl;
+	for (size_t i = 0; i < pool.getStocksCount(); i++)
+		std::cout << pool.getConstStock(i).getConstOut() << std::endl;
+
+	std::cout << "Answer" << std::endl;
+	std::cout << answer << std::endl;
+
+	std::cout << "Total error " << e << std::endl;
 
     ecl::System::release();
     return 0;
