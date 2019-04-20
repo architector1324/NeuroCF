@@ -47,12 +47,11 @@ int main()
 	std::cout << "Data" << std::endl;
 	std::cout << data << std::endl;
 
-	std::cout << "Net" << std::endl;
-	for (size_t i = 0; i < pool.getStocksCount(); i++)
-		std::cout << pool.getConstStock(i).getConstOut() << std::endl;
-
 	std::cout << "Answer" << std::endl;
 	std::cout << answer << std::endl;
+
+	std::cout << "Output:" << std::endl;
+	std::cout << pool << std::endl;
 
 	std::cout << "Total error " << e << std::endl;
 

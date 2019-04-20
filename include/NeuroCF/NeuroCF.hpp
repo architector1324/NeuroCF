@@ -127,6 +127,8 @@ namespace ncf{
         friend Computer& operator<<(Computer&, Stock<U>&);
         template<typename U>
         friend Computer& operator>>(Computer&, Stock<U>&);
+		template<typename U>
+		friend std::ostream& operator<<(std::ostream&, Stock<U>&);
 
         Mat<T>& getPreout();
         Mat<T>& getOut();
@@ -228,9 +230,11 @@ namespace ncf{
         void release(Computer&);
 
         template<typename U>
-        friend Computer& operator<<(Computer&, Net<U>&);
+        friend Computer& operator<<(Computer&, StockPool<U>&);
         template<typename U>
-        friend Computer& operator>>(Computer&, Net<U>&);
+        friend Computer& operator>>(Computer&, StockPool<U>&);
+		template<typename U>
+		friend std::ostream& operator<<(std::ostream&, StockPool<U>&);
 
         std::size_t getStocksCount() const;
         const Stock<T>& getConstStock(std::size_t) const;
@@ -713,6 +717,11 @@ namespace ncf{
         other.receive(video);
         return video;
     }
+	template<typename T>
+	std::ostream& operator<<(std::ostream& s, Stock<T>& other) {
+		s << other.getConstOut();
+		return s;
+	}
 }
 
 template<typename T>
@@ -1068,15 +1077,20 @@ void ncf::StockPool<T>::release(ecl::Computer& video){
 
 namespace ncf{
     template<typename T>
-    Computer& operator<<(Computer& video, StockPool<T>& net){
-        net.send(video);
+    Computer& operator<<(Computer& video, StockPool<T>& pool){
+        pool.send(video);
         return video;
     }
     template<typename T>
-    Computer& operator>>(Computer& video, StockPool<T>& net){
-        net.receive(video);
+    Computer& operator>>(Computer& video, StockPool<T>& pool){
+        pool.receive(video);
         return video;
     }
+	template<typename T>
+	std::ostream& operator<<(std::ostream& s, StockPool<T>& pool) {
+		s << pool.getStock(pool.getStocksCount() - 1);
+		return s;
+	}
 }
 
 template<typename T>
