@@ -598,7 +598,6 @@ void ncf::Layer<T>::error(const Stock<T>& in, Stock<T>& out) const{
     Mat<T>& out_error = out.getError();
 
     Mat<T>& out_preout = out.getPreout();
-    Mat<T>& out_out = out.getOut();
 
     next_core.mul(in_error, out_error, ncf::TRANSPOSE::FIRST);
     out_preout.map(derivative, out_preout);
@@ -612,7 +611,6 @@ void ncf::Layer<T>::error(const Stock<T>& in, Stock<T>& out, ecl::Computer& vide
     Mat<T>& out_error = out.getError();
 
     Mat<T>& out_preout = out.getPreout();
-    Mat<T>& out_out = out.getOut();
 
     next_core.mul(in_error, out_error, video, ncf::TRANSPOSE::FIRST);
     out_preout.map(computer_derivative, out_preout, video);

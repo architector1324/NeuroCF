@@ -47,7 +47,7 @@ int main()
 
 	video << net;
 
-	// setup containers
+	// setup matrices containers
 	ncf::StockPool<float> pool(net, 100);
 
 	video << pool;

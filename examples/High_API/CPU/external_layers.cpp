@@ -47,7 +47,7 @@ int main()
 	// setup net1
 	ncf::Net<float> net1({&h2, &h0, &h1});
 
-	// setup containers
+	// setup matrices containers
 	ncf::StockPool<float> pool0(net0, 1);
 	ncf::StockPool<float> pool1(net1, 1);
 
