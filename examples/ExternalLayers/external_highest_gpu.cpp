@@ -3,6 +3,10 @@
 
 int main()
 {
+	// setup computer
+	auto plat = ecl::System::getPlatform(0);
+	ecl::Computer video(0, plat, ecl::DEVICE::GPU);
+
 	// setup data
 	mcf::Mat<float> data0(5, 1);
 	mcf::Mat<float> data1(3, 1);
@@ -11,30 +15,38 @@ int main()
 	data1.full(2.0f);
 
 	mcf::Mat<float> answer0(3, 1);
-	mcf::Mat<float> answer1(2, 1);
+	mcf::Mat<float> answer1(5, 1);
 
 	answer0.full(1.0f);
 	answer1.full(2.0f);
 
+	video << data0 << data1;
+	video << answer0 << answer1;
+
 	// setup core generator
-	auto coregen = [](mcf::Mat<float>& A) {
-		A.full(0.01f);
+	auto coregen = [](mcf::Mat<float>& A, ecl::Computer& video) {
+		A.full(0.01f, video);
 	};
+
+	// setup functions
+	auto lrelu = "ret = v > 0 ? v : v * 0.1f;";
+	auto div_lrelu = "ret = v > 0 ? 1 : 0.1f;";
+	auto div_mse = "ret = 2 * v;";
 
 	// setup layers
 	ncf::Layer<float> h0(5);
-	h0.setActivation(ncf::activation::lrelu<float>);
-	h0.setDerivative(ncf::derivative::activation::lrelu<float>);
+	h0.setActivation(lrelu);
+	h0.setDerivative(div_lrelu);
 	h0.setCoreGen(coregen);
 
 	ncf::Layer<float> h1(2);
-	h1.setActivation(ncf::activation::lrelu<float>);
-	h1.setDerivative(ncf::derivative::activation::lrelu<float>);
+	h1.setActivation(lrelu);
+	h1.setDerivative(div_lrelu);
 	h1.setCoreGen(coregen);
 
 	ncf::Layer<float> h2(3);
-	h2.setActivation(ncf::activation::lrelu<float>);
-	h2.setDerivative(ncf::derivative::activation::lrelu<float>);
+	h2.setActivation(lrelu);
+	h2.setDerivative(div_lrelu);
 	h2.setCoreGen(coregen);
 
 	// setup net0
@@ -45,18 +57,22 @@ int main()
 	net0.push_back(&h2);
 
 	// setup net1
-	ncf::Net<float> net1({&h2, &h0, &h1});
+	ncf::Net<float> net1({&h2, &h1, &h0});
 
-	// setup matrices containers
+	// setup matrices stocks pools
 	ncf::StockPool<float> pool0(net0, 1);
 	ncf::StockPool<float> pool1(net1, 1);
 
-	// fit
-	ncf::FitFrame<float> frame0 = {data0, answer0, pool0, ncf::cost::mse<float>, ncf::derivative::cost::mse<float>};
-	ncf::FitFrame<float> frame1 = {data1, answer1, pool1, ncf::cost::mse<float>, ncf::derivative::cost::mse<float>};
+	video << pool0 << pool1;
 
-	net0.fit(frame0, 0.025f, 100, 0.001f);
-	net1.fit(frame1, 0.025f, 100, 0.001f);
+	// fit
+	ncf::FitFrame<float> frame0 = { data0, answer0, pool0, ncf::cost::mse<float>, div_mse};
+	ncf::FitFrame<float> frame1 = { data1, answer1, pool1, ncf::cost::mse<float>, div_mse};
+
+	net0.fit(frame0, 0.025f, 100, 0.001f, video);
+	net1.fit(frame1, 0.025f, 100, 0.001f, video);
+
+	video >> pool0 >> pool1;
 
 	// output0
 	std::cout << "Data0" << std::endl;

@@ -64,46 +64,46 @@ namespace ncf{
 		const std::function<void(Mat<T>&, Computer&)>& getComputerCoreGen() const;
 
         // Low-level methods
-        void query(const Mat<T>&, Mat<T>&) const;
-        void query(const Mat<T>&, Mat<T>&, Computer&) const;
+        void query(const Mat<T>& in, Mat<T>& out) const;
+        void query(const Mat<T>& in, Mat<T>& out, Computer&) const;
 
-        void query(const Mat<T>&, Mat<T>&, Mat<T>&, const Layer<T>&);
-        void query(const Mat<T>&, Mat<T>&, Mat<T>&, const Layer<T>&, Computer&);
+        void query(const Mat<T>& in, Mat<T>& preout, Mat<T>& out, const Layer<T>& prev);
+        void query(const Mat<T>& in, Mat<T>& preout, Mat<T>& out, const Layer<T>& prev, Computer&);
 
-        void error(const Mat<T>&, const Mat<T>&, Mat<T>&) const;
-        void error(const Mat<T>&, const Mat<T>&, Mat<T>&, Computer&) const;
+        void error(const Mat<T>& answer, const Mat<T>& out, Mat<T>& error) const;
+        void error(const Mat<T>& answer, const Mat<T>& out, Mat<T>& error, Computer&) const;
 
-        void error(const Mat<T>&, Mat<T>&, Mat<T>&, const Layer<T>&) const;
-        void error(const Mat<T>&, Mat<T>&, Mat<T>&, const Layer<T>&, Computer&) const;
+        void error(const Mat<T>& next_error, Mat<T>& preout, Mat<T>& error, const Layer<T>& next) const;
+        void error(const Mat<T>& next_error, Mat<T>& preout, Mat<T>& error, const Layer<T>& next, Computer&) const;
 
-        T cost(const Mat<T>&, const std::function<T(const T&)>&) const;
+        T cost(const Mat<T>& error, const std::function<T(const T&)>& cost) const;
 
-        void grad(Mat<T>&, const Mat<T>&, Mat<T>&, const std::function<T(const T&)>&) const;
-        void grad(Mat<T>&, const Mat<T>&, Mat<T>&, const std::string&, Computer&) const;
+        void grad(Mat<T>& error, const Mat<T>& prev_out, Mat<T>& grad, const std::function<T(const T&)>& div_cost) const;
+        void grad(Mat<T>& error, const Mat<T>& prev_out, Mat<T>& grad, const std::string& div_cost, Computer&) const;
 
-        void train(Mat<T>&, const Layer<T>&, const T&);
-        void train(Mat<T>&, const Layer<T>&, const T&, Computer& video);
+        void train(Mat<T>& grad, const Layer<T>& prev, const T& learning_rate);
+        void train(Mat<T>& grad, const Layer<T>& prev, const T& learning_rate, Computer& video);
 
         // High-level methods
-        void query(const Mat<T>&, Stock<T>&) const;
-        void query(const Mat<T>&, Stock<T>&, Computer&) const;
+        void query(const Mat<T>& in, Stock<T>& stock) const;
+        void query(const Mat<T>& in, Stock<T>& stock, Computer&) const;
 
-        void query(const Stock<T>&, Stock<T>&);
-        void query(const Stock<T>&, Stock<T>&, Computer&);
+        void query(const Stock<T>& prev_stock, Stock<T>& stock);
+        void query(const Stock<T>& prev_stock, Stock<T>& stock, Computer&);
 
-        void error(const Mat<T>&, Stock<T>&) const;
-        void error(const Mat<T>&, Stock<T>&, Computer&) const;
+        void error(const Mat<T>& in, Stock<T>& stock) const;
+        void error(const Mat<T>& in, Stock<T>& stock, Computer&) const;
 
-        void error(const Stock<T>&, Stock<T>&) const;
-        void error(const Stock<T>&, Stock<T>&, Computer&) const;
+        void error(const Stock<T>& next_stock, Stock<T>& stock) const;
+        void error(const Stock<T>& next_stock, Stock<T>& stock, Computer&) const;
 
-        T cost(const Stock<T>&, const std::function<T(const T&)>&) const;
+        T cost(const Stock<T>& stock, const std::function<T(const T&)>& cost) const;
 
-		void grad(const Stock<T>&, Stock<T>&, const std::function<T(const T&)>&) const;
-		void grad(const Stock<T>&, Stock<T>&, const std::string&, Computer&) const;
+		void grad(const Stock<T>& prev_stock, Stock<T>& stock, const std::function<T(const T&)>& div_cost) const;
+		void grad(const Stock<T>& prev_stock, Stock<T>& stock, const std::string& div_cost, Computer&) const;
 
-		void train(const Stock<T>&, Stock<T>&, const T&);
-		void train(const Stock<T>&, Stock<T>&, const T&, Computer&);
+		void train(const Stock<T>& prev_stock, Stock<T>& stock, const T& learning_rate);
+		void train(const Stock<T>& prev_stock, Stock<T>& stock, const T& learning_rate, Computer&);
     };
 
     template<typename T>
@@ -208,23 +208,23 @@ namespace ncf{
         Layer<T>& getLayer(std::size_t);
 
         // Low-level methods
-        void query(const Mat<T>&, StockPool<T>&);
-        void query(const Mat<T>&, StockPool<T>&, Computer&);
+        void query(const Mat<T>& in, StockPool<T>& pool);
+        void query(const Mat<T>& in, StockPool<T>& pool, Computer&);
 
-        void error(const Mat<T>&, StockPool<T>&);
-        void error(const Mat<T>&, StockPool<T>&, Computer&);
+        void error(const Mat<T>& answer, StockPool<T>& pool);
+        void error(const Mat<T>& answer, StockPool<T>& pool, Computer&);
 
-        T cost(const StockPool<T>&, const std::function<T(const T&)>&) const;
+        T cost(const StockPool<T>& pool, const std::function<T(const T&)>& cost) const;
 
-        void grad(StockPool<T>&, const std::function<T(const T&)>&);
-        void grad(StockPool<T>&, const std::string&, Computer&);
+        void grad(StockPool<T>& pool, const std::function<T(const T&)>& div_cost);
+        void grad(StockPool<T>& pool, const std::string& div_cost, Computer&);
 
-        void train(StockPool<T>&, T);
-        void train(StockPool<T>&, T, Computer&);
+        void train(StockPool<T>& pool, const T& learning_rate);
+        void train(StockPool<T>& pool, const T& learning_rate, Computer&);
 
 		// High-level methods
-		T fit(const FitFrame<T>&, const T&, std::size_t, const T&);
-		T fit(const FitFrame<T>&, const T&, std::size_t, const T&, Computer&);
+		T fit(const FitFrame<T>& frame, const T& learning_rate, std::size_t max_iterations, const T& min_error);
+		T fit(const FitFrame<T>& frame, const T& learning_rate, std::size_t max_iterations, const T& min_error, Computer&);
 
         ~Net();
     };
@@ -255,6 +255,7 @@ namespace ncf{
         std::size_t getStocksCount() const;
         const Stock<T>& getConstStock(std::size_t) const;
         Stock<T>& getStock(std::size_t);
+		Stock<T>& getLastStock();
 
         ~StockPool();
     };
@@ -542,136 +543,71 @@ void ncf::Layer<T>::train(mcf::Mat<T>& grad, const Layer<T>& prev, const T& lear
 // High-level methods
 template<typename T>
 void ncf::Layer<T>::query(const mcf::Mat<T>& in, Stock<T>& stock) const{
-    if(activation == nullptr)
-        throw std::runtime_error("Layer [query]: activation function unsetted");
-    in.map(activation, stock.getOut());
+	query(in, stock.getOut());
 }
 template<typename T>
 void ncf::Layer<T>::query(const mcf::Mat<T>& in, Stock<T>& stock, ecl::Computer& video) const{
-    in.map(computer_activation, stock.getOut(), video);
+	query(in, stock.getOut(), video);
 }
 
 template<typename T>
-void ncf::Layer<T>::query(const Stock<T>& in, Stock<T>& out){
-    size_t prev_neurons = in.getLayer().getNeurons();
-    createCore(prev_neurons);
-
-    const Mat<T>& in_out = in.getConstOut();
-
-    Mat<T>& out_preout = out.getPreout();
-    Mat<T>& out_out = out.getOut();
-
-    getCore(prev_neurons).mul(in_out, out_preout);
-    out_preout.map(activation, out_out);
+void ncf::Layer<T>::query(const Stock<T>& prev_stock, Stock<T>& stock){
+	query(prev_stock.getConstOut(), stock.getPreout(), stock.getOut(), prev_stock.getLayer());
 }
 template<typename T>
-void ncf::Layer<T>::query(const Stock<T>& in, Stock<T>& out, ecl::Computer& video){
-    size_t prev_neurons = in.getLayer().getNeurons();
-    createCore(prev_neurons, video);
-    
-    const Mat<T>& in_out = in.getConstOut();
-
-    Mat<T>& out_preout = out.getPreout();
-    Mat<T>& out_out = out.getOut();
-
-    getCore(prev_neurons).mul(in_out, out_preout, video);
-    out_preout.map(computer_activation, out_out, video);
+void ncf::Layer<T>::query(const Stock<T>& prev_stock, Stock<T>& stock, ecl::Computer& video){
+	query(prev_stock.getConstOut(), stock.getPreout(), stock.getOut(), prev_stock.getLayer(), video);
 }
 
 template<typename T>
-void ncf::Layer<T>::error(const mcf::Mat<T>& answer, Stock<T>& out) const{
-    answer.sub(out.getConstOut(), out.getError());
+void ncf::Layer<T>::error(const mcf::Mat<T>& answer, Stock<T>& stock) const{
+	error(answer, stock.getConstOut(), stock.getError());
 }
 template<typename T>
-void ncf::Layer<T>::error(const mcf::Mat<T>& answer, Stock<T>& out, ecl::Computer& video) const{
-    answer.sub(out.getConstOut(), out.getError(), video);
-}
-
-template<typename T>
-void ncf::Layer<T>::error(const Stock<T>& in, Stock<T>& out) const{
-    if(derivative == nullptr)
-        throw std::runtime_error("Layer [query]: derivative function unsetted");
-
-    const Mat<T>& next_core = in.getLayer().getConstCore(neurons);
-
-    const Mat<T>& in_error = in.getConstError();
-    Mat<T>& out_error = out.getError();
-
-    Mat<T>& out_preout = out.getPreout();
-
-    next_core.mul(in_error, out_error, ncf::TRANSPOSE::FIRST);
-    out_preout.map(derivative, out_preout);
-    out_error.hadamard(out_preout, out_error);
-}
-template<typename T>
-void ncf::Layer<T>::error(const Stock<T>& in, Stock<T>& out, ecl::Computer& video) const{
-    const Mat<T>& next_core = in.getLayer().getConstCore(neurons);
-
-    const Mat<T>& in_error = in.getConstError();
-    Mat<T>& out_error = out.getError();
-
-    Mat<T>& out_preout = out.getPreout();
-
-    next_core.mul(in_error, out_error, video, ncf::TRANSPOSE::FIRST);
-    out_preout.map(computer_derivative, out_preout, video);
-    out_error.hadamard(out_preout, out_error, video);
+void ncf::Layer<T>::error(const mcf::Mat<T>& answer, Stock<T>& stock, ecl::Computer& video) const{
+	error(answer, stock.getConstOut(), stock.getError(), video);
 }
 
 template<typename T>
-T ncf::Layer<T>::cost(const Stock<T>& error, const std::function<T(const T&)>& cost) const{
-    const Mat<T>& curr_error = error.getConstError();
-    size_t count = curr_error.getH() * curr_error.getW();
-    return curr_error.mreduce(cost) / static_cast<T>(count);
+void ncf::Layer<T>::error(const Stock<T>& next_stock, Stock<T>& stock) const{
+	error(next_stock.getConstError(), stock.getPreout(), stock.getError(), next_stock.getLayer());
+}
+template<typename T>
+void ncf::Layer<T>::error(const Stock<T>& next_stock, Stock<T>& stock, ecl::Computer& video) const{
+	error(next_stock.getConstError(), stock.getPreout(), stock.getError(), next_stock.getLayer(), video);
 }
 
 template<typename T>
-void ncf::Layer<T>::grad(const Stock<T>& in, Stock<T>& out, const std::function<T(const T&)>& div_cost) const {
-	std::size_t prev_neurons = in.getLayer().getNeurons();
-	out.createGrad(prev_neurons);
-
-	Mat<T>& error = out.getError();
-	Mat<T>& grad = out.getGrad(prev_neurons);
-	const Mat<T>& prev_out = in.getConstOut();
-
-	std::size_t count = error.getW() * error.getH();
-
-	error.map(div_cost, error);
-	error.mul(prev_out, grad, mcf::TRANSPOSE::SECOND);
-	grad.map([&](const T& v) {
-		return -v / static_cast<T>(count);
-	}, grad);
+T ncf::Layer<T>::cost(const Stock<T>& stock, const std::function<T(const T&)>& cost) const{
+	return this->cost(stock.getConstError(), cost);
 }
 
 template<typename T>
-void ncf::Layer<T>::train(const Stock<T>& in, Stock<T>& out, const T& learning_rate) {
-	std::size_t prev_neurons = in.getLayer().getNeurons();
+void ncf::Layer<T>::grad(const Stock<T>& prev_stock, Stock<T>& stock, const std::function<T(const T&)>& div_cost) const {
+	std::size_t prev_neurons = prev_stock.getLayer().getNeurons();
+	stock.createGrad(prev_neurons);
 
-	createCore(prev_neurons);
-	optimizer::gd<T>(getCore(prev_neurons), out.getGrad(prev_neurons), learning_rate);
+	grad(stock.getError(), prev_stock.getConstOut(), stock.getGrad(prev_neurons), div_cost);
 }
 template<typename T>
-void ncf::Layer<T>::train(const Stock<T>& in, Stock<T>& out, const T& learning_rate, ecl::Computer& video) {
-	std::size_t prev_neurons = in.getLayer().getNeurons();
+void ncf::Layer<T>::grad(const Stock<T>& prev_stock, Stock<T>& stock, const std::string& div_cost, ecl::Computer& video) const {
+	std::size_t prev_neurons = prev_stock.getLayer().getNeurons();
+	stock.createGrad(prev_neurons, video);
 
-	createCore(prev_neurons, video);
-	optimizer::gd<T>(getCore(prev_neurons), out.getGrad(prev_neurons), learning_rate, video);
+	grad(stock.getError(), prev_stock.getConstOut(), stock.getGrad(prev_neurons), div_cost, video);
 }
 
 template<typename T>
-void ncf::Layer<T>::grad(const Stock<T>& in, Stock<T>& out, const std::string& div_cost, ecl::Computer& video) const {
-	std::size_t prev_neurons = in.getLayer().getNeurons();
+void ncf::Layer<T>::train(const Stock<T>& prev_stock, Stock<T>& stock, const T& learning_rate) {
+	std::size_t prev_neurons = prev_stock.getLayer().getNeurons();
 
-	out.createGrad(prev_neurons, video);
+	optimizer::gd<T>(getCore(prev_neurons), stock.getGrad(prev_neurons), learning_rate);
+}
+template<typename T>
+void ncf::Layer<T>::train(const Stock<T>& prev_stock, Stock<T>& stock, const T& learning_rate, ecl::Computer& video) {
+	std::size_t prev_neurons = prev_stock.getLayer().getNeurons();
 
-	Mat<T>& error = out.getError();
-	Mat<T>& grad = out.getGrad(prev_neurons);
-	const Mat<T>& prev_out = in.getConstOut();
-	
-	std::string count = std::to_string(static_cast<T>(error.getW() * error.getH()));
-
-	error.map(div_cost, error, video);
-	error.mul(prev_out, grad, video, mcf::TRANSPOSE::SECOND);
-	grad.map("ret = -v / " + count + ";", grad, video);
+	optimizer::gd<T>(getCore(prev_neurons), stock.getGrad(prev_neurons), learning_rate, video);
 }
 
 // Stock
@@ -1014,7 +950,7 @@ void ncf::Net<T>::grad(StockPool<T>& pool, const std::string& div_cost, ecl::Com
 }
 
 template<typename T>
-void ncf::Net<T>::train(StockPool<T>& pool, T learning_rate){
+void ncf::Net<T>::train(StockPool<T>& pool, const T& learning_rate){
     checkStockPool(pool, "train");
 
     size_t count = pool.getStocksCount();
@@ -1023,7 +959,7 @@ void ncf::Net<T>::train(StockPool<T>& pool, T learning_rate){
         layers.at(i).first->train(pool.getConstStock(i - 1), pool.getStock(i), learning_rate);
 }
 template<typename T>
-void ncf::Net<T>::train(StockPool<T>& pool, T learning_rate, ecl::Computer& video){
+void ncf::Net<T>::train(StockPool<T>& pool, const T& learning_rate, ecl::Computer& video){
     checkStockPool(pool, "train");
 
     size_t count = pool.getStocksCount();
@@ -1158,6 +1094,10 @@ const ncf::Stock<T>& ncf::StockPool<T>::getConstStock(std::size_t index) const{
 template<typename T>
 ncf::Stock<T>& ncf::StockPool<T>::getStock(std::size_t index){
     return *stocks.at(index).first;
+}
+template<typename T>
+ncf::Stock<T>& ncf::StockPool<T>::getLastStock() {
+	return *stocks.back().first;
 }
 
 

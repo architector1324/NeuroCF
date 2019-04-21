@@ -32,11 +32,8 @@ int main()
     net.setDerivatives({1}, div_lrelu);
     net.setCoreGens({1, 2}, coregen);
 
-    video << net;
-
-    // setup matrices containers
+    // setup matrices stocks pool
     ncf::StockPool<float> pool(net, 1);
-	
 	video << pool;
 
 	// fit

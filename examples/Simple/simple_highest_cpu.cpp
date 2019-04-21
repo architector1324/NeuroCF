@@ -21,7 +21,7 @@ int main()
     net.setDerivatives({1}, ncf::derivative::activation::lrelu<float>);
     net.setCoreGens({1, 2}, coregen);
 
-    // setup matrices containers
+    // setup matrices stocks pool
     ncf::StockPool<float> pool(net, 1);
 
     // fit

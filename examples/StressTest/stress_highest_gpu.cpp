@@ -21,8 +21,8 @@ int main()
 	ecl::Computer video(0, plat, ecl::DEVICE::GPU);
 
 	// setup data
-	mcf::Mat<float> data(500, 100);
-	mcf::Mat<float> answer(300, 100);
+	mcf::Mat<float> data(500, 1000);
+	mcf::Mat<float> answer(300, 1000);
 
 	data.full(2.0f);
 	answer.full(3.0f);
@@ -45,11 +45,8 @@ int main()
 	net.setDerivatives({ 1 }, div_lrelu);
 	net.setCoreGens({ 1, 2 }, coregen);
 
-	video << net;
-
-	// setup matrices containers
-	ncf::StockPool<float> pool(net, 100);
-
+	// setup matrices stocks pools
+	ncf::StockPool<float> pool(net, 1000);
 	video << pool;
 
 	// fit

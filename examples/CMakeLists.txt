@@ -1,8 +1,17 @@
 cmake_minimum_required(VERSION 3.7...3.13)
 
-neurocf_add_example(stress_cpu High_API/CPU/stress.cpp)
-neurocf_add_example(stress_gpu High_API/GPU/stress.cpp)
-neurocf_add_example(simple_cpu High_API/CPU/simple.cpp)
-neurocf_add_example(simple_gpu High_API/GPU/simple.cpp)
-neurocf_add_example(external_layers_cpu High_API/CPU/external_layers.cpp)
-neurocf_add_example(external_layers_gpu High_API/GPU/external_layers.cpp)
+
+neurocf_add_example(simple_lowest_cpu Simple/simple_lowest_cpu.cpp)
+neurocf_add_example(simple_lowest_gpu Simple/simple_lowest_gpu.cpp)
+neurocf_add_example(simple_low_cpu Simple/simple_low_cpu.cpp)
+neurocf_add_example(simple_low_gpu Simple/simple_low_gpu.cpp)
+neurocf_add_example(simple_high_cpu Simple/simple_high_cpu.cpp)
+neurocf_add_example(simple_high_gpu Simple/simple_high_gpu.cpp)
+neurocf_add_example(simple_highest_cpu Simple/simple_highest_cpu.cpp)
+neurocf_add_example(simple_highest_gpu Simple/simple_highest_gpu.cpp)
+
+neurocf_add_example(external_highest_cpu ExternalLayers/external_highest_cpu.cpp)
+neurocf_add_example(external_highest_gpu ExternalLayers/external_highest_gpu.cpp)
+
+neurocf_add_example(stress_highest_cpu StressTest/stress_highest_cpu.cpp)
+neurocf_add_example(stress_highest_gpu StressTest/stress_highest_gpu.cpp)

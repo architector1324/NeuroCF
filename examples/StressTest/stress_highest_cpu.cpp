@@ -17,8 +17,8 @@ void executionTime(const std::function<void()>& f, size_t times = 1) {
 int main()
 {
     // setup data
-    mcf::Mat<float> data(500, 100);
-    mcf::Mat<float> answer(300, 100);
+    mcf::Mat<float> data(500, 1000);
+    mcf::Mat<float> answer(300, 1000);
 
     data.full(2.0f);
     answer.full(3.0f);
@@ -34,8 +34,8 @@ int main()
     net.setDerivatives({1}, ncf::derivative::activation::lrelu<float>);
     net.setCoreGens({1, 2}, coregen);
 
-    // setup matrices containers
-    ncf::StockPool<float> pool(net, 100);
+    // setup matrices stocks pools
+    ncf::StockPool<float> pool(net, 1000);
 
     // fit
 	ncf::FitFrame<float> frame = {data, answer, pool, ncf::cost::mse<float>, ncf::derivative::cost::mse<float>};
